@@ -3,7 +3,9 @@
 <head>
   <meta charset="UTF-8">
   <meta name="viewport" content="width=device-width, initial-scale=1.0">
-  <title>Sistema Contable e Inventarios</title>
+  <title>Control Financiero</title>
+  <link rel="manifest" href="manifest.json">
+  <meta name="theme-color" content="#0f172a">
   <script src="https://cdn.tailwindcss.com"></script>
   <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
   <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
@@ -17,7 +19,7 @@
 </head>
 <body class="bg-slate-100 text-slate-800 font-sans min-h-screen">
 
-  <!-- PANTALLA DE LOGIN -->
+  <!-- PANTALLA DE LOGIN GENERAL -->
   <div id="loginSection" class="fixed inset-0 bg-slate-900 flex justify-center items-center p-4 z-50">
     <div class="bg-white rounded-2xl shadow-2xl p-8 max-w-sm w-full space-y-6 text-center">
       <div class="inline-flex items-center justify-center w-16 h-16 bg-amber-100 text-amber-600 rounded-full text-3xl mb-2">
@@ -57,8 +59,8 @@
           </div>
         </div>
         <div class="flex items-center gap-2">
-          <span id="syncStatus" class="text-xs px-2.5 py-1 rounded-full bg-slate-800 text-slate-400 border border-slate-700">
-            <i class="fa-solid fa-cloud"></i> Off-line
+          <span id="pinStatus" class="text-xs px-2.5 py-1 rounded-full bg-slate-800 text-slate-300 border border-slate-700">
+            <i class="fa-solid fa-user-lock"></i> Lumbre: Bloqueado
           </span>
           <button onclick="cerrarSesion()" class="bg-rose-600 hover:bg-rose-700 px-3 py-1.5 rounded text-xs font-semibold transition">
             <i class="fa-solid fa-right-from-bracket"></i>
@@ -76,8 +78,8 @@
         <button onclick="cambiarPestana('ventas')" id="tab-ventas" class="tab-btn px-4 py-3 whitespace-nowrap flex items-center gap-2">
           <i class="fa-solid fa-cart-shopping"></i> Registrar Venta
         </button>
-        <button onclick="cambiarPestana('inv-venta')" id="tab-inv-venta" class="tab-btn px-4 py-3 whitespace-nowrap flex items-center gap-2">
-          <i class="fa-solid fa-boxes-packing text-emerald-600"></i> Inv. Venta
+        <button onclick="intentarAccesoLumbre('inv-venta')" id="tab-inv-venta" class="tab-btn px-4 py-3 whitespace-nowrap flex items-center gap-2">
+          <i class="fa-solid fa-boxes-packing text-emerald-600"></i> Inv. Lumbre / Navidad
         </button>
         <button onclick="cambiarPestana('inv-uso')" id="tab-inv-uso" class="tab-btn px-4 py-3 whitespace-nowrap flex items-center gap-2">
           <i class="fa-solid fa-screwdriver-wrench text-amber-600"></i> Tools / Personales
@@ -96,18 +98,33 @@
       <!-- DASHBOARD -->
       <section id="sec-dashboard" class="space-y-6">
         <div class="grid grid-cols-1 md:grid-cols-3 gap-4">
-          <div class="bg-white p-5 rounded-xl shadow-sm border border-slate-200">
+          
+          <!-- TARJETA ORIGEN LUMBRE (PROTEGIDA POR PIN) -->
+          <div class="bg-white p-5 rounded-xl shadow-sm border border-slate-200 relative overflow-hidden">
             <div class="flex justify-between items-center mb-2">
               <span class="text-xs font-bold uppercase text-amber-700 bg-amber-50 px-2 py-1 rounded">Origen Lumbre</span>
               <i class="fa-solid fa-fire text-amber-500 text-xl"></i>
             </div>
-            <div class="text-2xl font-bold" id="dash-lumbre-neto">$0</div>
-            <div class="flex justify-between text-xs text-slate-500 mt-3 pt-2 border-t">
-              <span>Ing: <strong class="text-emerald-600" id="dash-lumbre-ing">$0</strong></span>
-              <span>Gast: <strong class="text-rose-600" id="dash-lumbre-gas">$0</strong></span>
+            
+            <div id="lumbreCardContent" class="filter blur-sm select-none pointer-events-none">
+              <div class="text-2xl font-bold" id="dash-lumbre-neto">$0</div>
+              <div class="flex justify-between text-xs text-slate-500 mt-3 pt-2 border-t">
+                <span>Ing: <strong class="text-emerald-600" id="dash-lumbre-ing">$0</strong></span>
+                <span>Gast: <strong class="text-rose-600" id="dash-lumbre-gas">$0</strong></span>
+              </div>
+            </div>
+
+            <!-- Overlay de Bloqueo -->
+            <div id="lumbreOverlay" class="absolute inset-0 bg-slate-900/80 backdrop-blur-md flex flex-col justify-center items-center p-4 text-center text-white">
+              <i class="fa-solid fa-lock text-2xl text-amber-400 mb-2"></i>
+              <p class="text-xs font-bold mb-2">Acceso Exclusivo Exigido</p>
+              <button onclick="abrirModalPin('dashboard')" class="bg-amber-500 hover:bg-amber-600 text-slate-900 px-3 py-1.5 rounded-lg text-xs font-bold shadow">
+                Desbloquear con PIN
+              </button>
             </div>
           </div>
 
+          <!-- TARJETA NAVIDAD -->
           <div class="bg-white p-5 rounded-xl shadow-sm border border-slate-200">
             <div class="flex justify-between items-center mb-2">
               <span class="text-xs font-bold uppercase text-rose-700 bg-rose-50 px-2 py-1 rounded">Navidad</span>
@@ -120,6 +137,7 @@
             </div>
           </div>
 
+          <!-- TARJETA PERSONALES -->
           <div class="bg-white p-5 rounded-xl shadow-sm border border-slate-200">
             <div class="flex justify-between items-center mb-2">
               <span class="text-xs font-bold uppercase text-blue-700 bg-blue-50 px-2 py-1 rounded">Gastos Personales</span>
@@ -165,12 +183,8 @@
               <label class="block text-xs font-semibold text-slate-600 mb-1">Cliente</label>
               <input type="text" id="ventaCliente" placeholder="Ej. Juan Pérez" class="w-full p-2.5 border rounded-lg text-sm">
             </div>
-            <div>
-              <label class="block text-xs font-semibold text-slate-600 mb-1">Observación</label>
-              <input type="text" id="ventaObservaciones" placeholder="Ej. Pago Nequi" class="w-full p-2.5 border rounded-lg text-sm">
-            </div>
             <button type="submit" class="w-full bg-emerald-600 hover:bg-emerald-700 text-white font-bold py-3 rounded-lg shadow transition">
-              Registrar y Descontar Stock
+              Registrar Venta
             </button>
           </form>
         </div>
@@ -179,7 +193,7 @@
       <!-- INVENTARIO VENTA -->
       <section id="sec-inv-venta" class="hidden space-y-4">
         <div class="flex justify-between items-center">
-          <h2 class="text-base font-bold text-slate-800">Productos para la Venta</h2>
+          <h2 class="text-base font-bold text-slate-800">Inventario Comercial</h2>
           <button onclick="abrirModal('modalProductoVenta')" class="bg-emerald-600 hover:bg-emerald-700 text-white px-3 py-1.5 rounded-lg text-xs font-bold flex items-center gap-1.5">
             <i class="fa-solid fa-plus"></i> Crear Producto
           </button>
@@ -250,31 +264,49 @@
       <section id="sec-config" class="hidden max-w-lg mx-auto">
         <div class="bg-white p-6 rounded-xl shadow-sm border border-slate-200 space-y-4">
           <h2 class="text-base font-bold text-slate-800 flex items-center gap-2">
-            <i class="fa-solid fa-cloud-arrow-up text-blue-600"></i> Configuración de Sincronización
+            <i class="fa-solid fa-cloud-arrow-up text-blue-600"></i> Configuración Nube
           </h2>
-          <p class="text-xs text-slate-500">Pega aquí tu URL de Google Apps Script para sincronizar en tiempo real con Google Sheets en todos los celulares.</p>
           <div>
             <label class="block text-xs font-semibold text-slate-600 mb-1">URL de Apps Script (/exec)</label>
             <input type="text" id="apiScriptUrl" placeholder="https://script.google.com/macros/s/.../exec" class="w-full p-2.5 border rounded-lg text-xs">
           </div>
           <button onclick="guardarApiUrl()" class="w-full bg-blue-600 hover:bg-blue-700 text-white font-bold py-2.5 rounded-lg text-xs transition">
-            Guardar y Sincronizar Nube
+            Guardar y Sincronizar
           </button>
         </div>
       </section>
 
     </main>
 
-    <!-- MODALES -->
+    <!-- MODAL DE PIN 4 DÍGITOS -->
+    <div id="modalPinLumbre" class="fixed inset-0 bg-slate-900/80 backdrop-blur-md hidden flex justify-center items-center p-4 z-50">
+      <div class="bg-white rounded-2xl p-6 max-w-xs w-full space-y-4 text-center shadow-2xl">
+        <div class="w-12 h-12 bg-amber-100 text-amber-600 rounded-full flex items-center justify-center mx-auto text-xl">
+          <i class="fa-solid fa-key"></i>
+        </div>
+        <div>
+          <h3 class="font-bold text-slate-800 text-base">Acceso Origen Lumbre</h3>
+          <p class="text-xs text-slate-500">Ingresa el PIN de 4 dígitos para continuar</p>
+        </div>
+        <input type="password" id="inputPinLumbre" maxlength="4" placeholder="••••" class="w-full text-center text-2xl tracking-widest font-bold p-3 border-2 border-slate-200 rounded-xl outline-none focus:border-amber-500">
+        <p id="pinError" class="text-xs text-rose-500 font-bold hidden">PIN Incorrecto</p>
+        <div class="flex gap-2">
+          <button type="button" onclick="cerrarModal('modalPinLumbre')" class="w-1/2 py-2.5 border rounded-lg text-xs font-bold text-slate-600">Cancelar</button>
+          <button type="button" onclick="verificarPinLumbre()" class="w-1/2 py-2.5 bg-amber-500 hover:bg-amber-600 text-slate-900 font-bold rounded-lg text-xs">Desbloquear</button>
+        </div>
+      </div>
+    </div>
+
+    <!-- MODALES PRODUCTOS -->
     <div id="modalProductoVenta" class="fixed inset-0 bg-slate-900/50 backdrop-blur-sm hidden flex justify-center items-center p-4 z-50">
       <div class="bg-white rounded-xl p-5 max-w-sm w-full space-y-3">
-        <h3 class="font-bold text-slate-800 text-sm">Nuevo Producto / Kit</h3>
+        <h3 class="font-bold text-slate-800 text-sm">Nuevo Producto</h3>
         <form onsubmit="guardarProductoVenta(event)" class="space-y-2 text-xs">
           <input type="text" id="pvNombre" placeholder="Nombre Producto" class="w-full p-2 border rounded" required>
           <select id="pvCategoria" class="w-full p-2 border rounded" required>
-            <option value="Origen Lumbre">Origen Lumbre</option>
             <option value="Navidad - Decoraciones">Navidad - Decoraciones</option>
             <option value="Navidad - Velas">Navidad - Velas</option>
+            <option value="Origen Lumbre">Origen Lumbre (Requiere PIN)</option>
           </select>
           <div class="grid grid-cols-2 gap-2">
             <input type="number" id="pvCosto" placeholder="Costo ($)" class="w-full p-2 border rounded" required>
@@ -291,13 +323,13 @@
 
     <div id="modalProductoUso" class="fixed inset-0 bg-slate-900/50 backdrop-blur-sm hidden flex justify-center items-center p-4 z-50">
       <div class="bg-white rounded-xl p-5 max-w-sm w-full space-y-3">
-        <h3 class="font-bold text-slate-800 text-sm">Registrar Ítem Personal / Herramienta</h3>
+        <h3 class="font-bold text-slate-800 text-sm">Registrar Ítem / Herramienta</h3>
         <form onsubmit="guardarProductoUso(event)" class="space-y-2 text-xs">
           <input type="text" id="puNombre" placeholder="Descripción" class="w-full p-2 border rounded" required>
           <select id="puCategoria" class="w-full p-2 border rounded" required>
-            <option value="Origen Lumbre - Herramientas">Origen Lumbre - Herramientas</option>
             <option value="Navidad - Herramientas">Navidad - Herramientas</option>
             <option value="Gastos Personales">Gastos Personales</option>
+            <option value="Origen Lumbre - Herramientas">Origen Lumbre (Requiere PIN)</option>
           </select>
           <div class="grid grid-cols-2 gap-2">
             <input type="number" id="puCosto" placeholder="Costo ($)" class="w-full p-2 border rounded" required>
@@ -314,9 +346,17 @@
   </div>
 
   <script>
+    if ('serviceWorker' in navigator) {
+      navigator.serviceWorker.register('sw.js').catch(() => {});
+    }
+
     const USER_OK = "origenlumbre";
     const PASS_OK = "navidad2026";
-    let scriptApiUrl = localStorage.getItem('SCRIPT_API_URL') || '';
+    const PIN_LUMBRE = "1234"; // PIN DE 4 DÍGITOS PARA ORIGEN LUMBRE
+
+    let lumbreDesbloqueado = false;
+    let pestanaPendiente = null;
+    let scriptApiUrl = localStorage.getItem('SCRIPT_API_URL') || 'https://script.google.com/macros/s/AKfycbwSaFgXkFrzFi5-BDUb06GnmFUSmTHHX6Qjk-WYVgv7qfa0f5aCYQdbMlO_5q1ROAz9/exec';
 
     let datos = JSON.parse(localStorage.getItem('SISTEMA_FINANCIERO_DATOS')) || {
       invVenta: [
@@ -335,10 +375,7 @@
 
     function validarLogin(e) {
       e.preventDefault();
-      const u = document.getElementById('loginUser').value;
-      const p = document.getElementById('loginPass').value;
-
-      if (u === USER_OK && p === PASS_OK) {
+      if (document.getElementById('loginUser').value === USER_OK && document.getElementById('loginPass').value === PASS_OK) {
         document.getElementById('loginSection').classList.add('hidden');
         document.getElementById('appSection').classList.remove('hidden');
         inicializarApp();
@@ -348,16 +385,51 @@
     }
 
     function cerrarSesion() {
+      lumbreDesbloqueado = false;
       document.getElementById('appSection').classList.add('hidden');
       document.getElementById('loginSection').classList.remove('hidden');
     }
 
     function inicializarApp() {
-      if (scriptApiUrl) {
-        document.getElementById('syncStatus').innerHTML = '<i class="fa-solid fa-cloud-check text-emerald-400"></i> Nube Activa';
-        document.getElementById('apiScriptUrl').value = scriptApiUrl;
-      }
+      document.getElementById('apiScriptUrl').value = scriptApiUrl;
       guardarYActualizar();
+    }
+
+    function intentarAccesoLumbre(pestana) {
+      if (lumbreDesbloqueado) {
+        cambiarPestana(pestana);
+      } else {
+        pestanaPendiente = pestana;
+        abrirModalPin();
+      }
+    }
+
+    function abrirModalPin() {
+      document.getElementById('inputPinLumbre').value = '';
+      document.getElementById('pinError').classList.add('hidden');
+      abrirModal('modalPinLumbre');
+      setTimeout(() => document.getElementById('inputPinLumbre').focus(), 200);
+    }
+
+    function verificarPinLumbre() {
+      const pin = document.getElementById('inputPinLumbre').value;
+      if (pin === PIN_LUMBRE) {
+        lumbreDesbloqueado = true;
+        cerrarModal('modalPinLumbre');
+        document.getElementById('pinStatus').innerHTML = '<i class="fa-solid fa-lock-open text-emerald-400"></i> Lumbre: Activo';
+        document.getElementById('lumbreCardContent').classList.remove('blur-sm', 'select-none', 'pointer-events-none');
+        document.getElementById('lumbreOverlay').classList.add('hidden');
+        
+        renderizarTablas();
+        cargarSelectProductosVenta();
+
+        if (pestanaPendiente) {
+          cambiarPestana(pestanaPendiente);
+          pestanaPendiente = null;
+        }
+      } else {
+        document.getElementById('pinError').classList.remove('hidden');
+      }
     }
 
     function guardarYActualizar() {
@@ -386,7 +458,7 @@
       if (url) {
         localStorage.setItem('SCRIPT_API_URL', url);
         scriptApiUrl = url;
-        alert('¡URL guardada y sincronizada correctamente!');
+        alert('URL guardada!');
         inicializarApp();
       }
     }
@@ -427,8 +499,8 @@
         data: {
           labels: ['Origen Lumbre', 'Navidad', 'Personales'],
           datasets: [
-            { label: 'Ingresos', data: [calc.lumbreIng, calc.navidadIng, 0], backgroundColor: '#10b981' },
-            { label: 'Gastos', data: [calc.lumbreGas, calc.navidadGas, calc.personalGas], backgroundColor: '#f43f5e' }
+            { label: 'Ingresos', data: [lumbreDesbloqueado ? calc.lumbreIng : 0, calc.navidadIng, 0], backgroundColor: '#10b981' },
+            { label: 'Gastos', data: [lumbreDesbloqueado ? calc.lumbreGas : 0, calc.navidadGas, calc.personalGas], backgroundColor: '#f43f5e' }
           ]
         },
         options: { responsive: true, maintainAspectRatio: false }
@@ -436,7 +508,8 @@
     }
 
     function renderizarTablas() {
-      document.getElementById('tablaInvVenta').innerHTML = datos.invVenta.map(p => `
+      const invVentaFiltrado = datos.invVenta.filter(p => lumbreDesbloqueado || p.categoria !== 'Origen Lumbre');
+      document.getElementById('tablaInvVenta').innerHTML = invVentaFiltrado.map(p => `
         <tr>
           <td class="p-3 font-bold">${p.nombre}</td>
           <td class="p-3">${p.categoria}</td>
@@ -446,7 +519,8 @@
           <td class="p-3 text-right"><button onclick="eliminarVenta(${p.id})" class="text-rose-500"><i class="fa-solid fa-trash"></i></button></td>
         </tr>`).join('');
 
-      document.getElementById('tablaInvUso').innerHTML = datos.invUso.map(p => `
+      const invUsoFiltrado = datos.invUso.filter(p => lumbreDesbloqueado || p.categoria !== 'Origen Lumbre - Herramientas');
+      document.getElementById('tablaInvUso').innerHTML = invUsoFiltrado.map(p => `
         <tr>
           <td class="p-3 font-bold">${p.nombre}</td>
           <td class="p-3">${p.categoria}</td>
@@ -455,7 +529,8 @@
           <td class="p-3 text-right"><button onclick="eliminarUso(${p.id})" class="text-rose-500"><i class="fa-solid fa-trash"></i></button></td>
         </tr>`).join('');
 
-      document.getElementById('tablaMovimientos').innerHTML = datos.movimientos.map(m => `
+      const movFiltrados = datos.movimientos.filter(m => lumbreDesbloqueado || m.cuenta !== 'Origen Lumbre');
+      document.getElementById('tablaMovimientos').innerHTML = movFiltrados.map(m => `
         <tr>
           <td class="p-3 text-slate-400">${m.fecha}</td>
           <td class="p-3 font-bold ${m.tipo === 'Ingreso' ? 'text-emerald-600' : 'text-rose-600'}">${m.tipo}</td>
@@ -467,8 +542,9 @@
 
     function cargarSelectProductosVenta() {
       const select = document.getElementById('ventaProducto');
+      const prodFiltrados = datos.invVenta.filter(p => lumbreDesbloqueado || p.categoria !== 'Origen Lumbre');
       select.innerHTML = '<option value="">-- Seleccionar --</option>' + 
-        datos.invVenta.map(p => `<option value="${p.id}">${p.nombre} (Stock: ${p.stock})</option>`).join('');
+        prodFiltrados.map(p => `<option value="${p.id}">${p.nombre} (Stock: ${p.stock})</option>`).join('');
     }
 
     function actualizarPrecioSugerido() {
@@ -486,7 +562,7 @@
       const cliente = document.getElementById('ventaCliente').value;
 
       if (!prod || cant > prod.stock) {
-        alert('Stock insuficiente o producto no seleccionado');
+        alert('Stock insuficiente o no seleccionado');
         return;
       }
 
@@ -504,16 +580,22 @@
 
       guardarYActualizar();
       document.getElementById('formVenta').reset();
-      alert('¡Venta registrada exitosamente!');
+      alert('¡Venta registrada!');
       cambiarPestana('dashboard');
     }
 
     function guardarProductoVenta(e) {
       e.preventDefault();
+      const cat = document.getElementById('pvCategoria').value;
+      if (cat === 'Origen Lumbre' && !lumbreDesbloqueado) {
+        alert('Debes ingresar el PIN para registrar productos de Origen Lumbre');
+        return;
+      }
+
       datos.invVenta.push({
         id: Date.now(),
         nombre: document.getElementById('pvNombre').value,
-        categoria: document.getElementById('pvCategoria').value,
+        categoria: cat,
         costo: parseFloat(document.getElementById('pvCosto').value),
         precio: parseFloat(document.getElementById('pvPrecio').value),
         stock: parseInt(document.getElementById('pvStock').value)
@@ -524,10 +606,16 @@
 
     function guardarProductoUso(e) {
       e.preventDefault();
+      const cat = document.getElementById('puCategoria').value;
+      if (cat === 'Origen Lumbre - Herramientas' && !lumbreDesbloqueado) {
+        alert('Debes ingresar el PIN para registrar herramientas de Origen Lumbre');
+        return;
+      }
+
       datos.invUso.push({
         id: Date.now(),
         nombre: document.getElementById('puNombre').value,
-        categoria: document.getElementById('puCategoria').value,
+        categoria: cat,
         costo: parseFloat(document.getElementById('puCosto').value),
         cantidad: parseInt(document.getElementById('puCantidad').value)
       });
