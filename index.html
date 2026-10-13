@@ -1,0 +1,545 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Sistema Contable e Inventarios</title>
+  <script src="https://cdn.tailwindcss.com"></script>
+  <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
+  <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
+  <style>
+    .tab-btn.active {
+      border-bottom: 3px solid #10b981;
+      color: #10b981;
+      font-weight: bold;
+    }
+  </style>
+</head>
+<body class="bg-slate-100 text-slate-800 font-sans min-h-screen">
+
+  <!-- PANTALLA DE LOGIN -->
+  <div id="loginSection" class="fixed inset-0 bg-slate-900 flex justify-center items-center p-4 z-50">
+    <div class="bg-white rounded-2xl shadow-2xl p-8 max-w-sm w-full space-y-6 text-center">
+      <div class="inline-flex items-center justify-center w-16 h-16 bg-amber-100 text-amber-600 rounded-full text-3xl mb-2">
+        <i class="fa-solid fa-lock"></i>
+      </div>
+      <div>
+        <h2 class="text-2xl font-bold text-slate-800">Control Financiero</h2>
+        <p class="text-xs text-slate-500 mt-1">Origen Lumbre & Navidad</p>
+      </div>
+      <form onsubmit="validarLogin(event)" class="space-y-4 text-left">
+        <div>
+          <label class="block text-xs font-semibold text-slate-600 mb-1">Usuario</label>
+          <input type="text" id="loginUser" class="w-full p-3 border rounded-lg text-sm outline-none focus:ring-2 focus:ring-amber-500" placeholder="Ingrese usuario" required>
+        </div>
+        <div>
+          <label class="block text-xs font-semibold text-slate-600 mb-1">Contraseña</label>
+          <input type="password" id="loginPass" class="w-full p-3 border rounded-lg text-sm outline-none focus:ring-2 focus:ring-amber-500" placeholder="••••••••" required>
+        </div>
+        <p id="loginError" class="text-xs text-rose-500 font-semibold hidden text-center">Credenciales incorrectas</p>
+        <button type="submit" class="w-full bg-slate-900 hover:bg-slate-800 text-white font-bold py-3 rounded-lg shadow-lg transition">
+          Ingresar al Sistema
+        </button>
+      </form>
+    </div>
+  </div>
+
+  <!-- INTERFAZ PRINCIPAL -->
+  <div id="appSection" class="hidden">
+    <!-- Navbar -->
+    <header class="bg-slate-900 text-white p-4 shadow-md sticky top-0 z-40">
+      <div class="max-w-7xl mx-auto flex justify-between items-center">
+        <div class="flex items-center space-x-3">
+          <i class="fa-solid fa-chart-line text-amber-400 text-2xl"></i>
+          <div>
+            <h1 class="text-base font-bold leading-tight">Control Financiero</h1>
+            <p class="text-[10px] text-slate-400">Origen Lumbre | Navidad | Personales</p>
+          </div>
+        </div>
+        <div class="flex items-center gap-2">
+          <span id="syncStatus" class="text-xs px-2.5 py-1 rounded-full bg-slate-800 text-slate-400 border border-slate-700">
+            <i class="fa-solid fa-cloud"></i> Off-line
+          </span>
+          <button onclick="cerrarSesion()" class="bg-rose-600 hover:bg-rose-700 px-3 py-1.5 rounded text-xs font-semibold transition">
+            <i class="fa-solid fa-right-from-bracket"></i>
+          </button>
+        </div>
+      </div>
+    </header>
+
+    <!-- Pestañas -->
+    <nav class="bg-white border-b border-slate-200 sticky top-[60px] z-30 shadow-sm overflow-x-auto">
+      <div class="max-w-7xl mx-auto flex text-sm">
+        <button onclick="cambiarPestana('dashboard')" id="tab-dashboard" class="tab-btn active px-4 py-3 whitespace-nowrap flex items-center gap-2">
+          <i class="fa-solid fa-chart-pie"></i> Dashboard
+        </button>
+        <button onclick="cambiarPestana('ventas')" id="tab-ventas" class="tab-btn px-4 py-3 whitespace-nowrap flex items-center gap-2">
+          <i class="fa-solid fa-cart-shopping"></i> Registrar Venta
+        </button>
+        <button onclick="cambiarPestana('inv-venta')" id="tab-inv-venta" class="tab-btn px-4 py-3 whitespace-nowrap flex items-center gap-2">
+          <i class="fa-solid fa-boxes-packing text-emerald-600"></i> Inv. Venta
+        </button>
+        <button onclick="cambiarPestana('inv-uso')" id="tab-inv-uso" class="tab-btn px-4 py-3 whitespace-nowrap flex items-center gap-2">
+          <i class="fa-solid fa-screwdriver-wrench text-amber-600"></i> Tools / Personales
+        </button>
+        <button onclick="cambiarPestana('movimientos')" id="tab-movimientos" class="tab-btn px-4 py-3 whitespace-nowrap flex items-center gap-2">
+          <i class="fa-solid fa-list-check"></i> Historial
+        </button>
+        <button onclick="cambiarPestana('config')" id="tab-config" class="tab-btn px-4 py-3 whitespace-nowrap flex items-center gap-2 text-slate-500">
+          <i class="fa-solid fa-gear"></i> Nube
+        </button>
+      </div>
+    </nav>
+
+    <main class="max-w-7xl mx-auto p-4 space-y-6">
+
+      <!-- DASHBOARD -->
+      <section id="sec-dashboard" class="space-y-6">
+        <div class="grid grid-cols-1 md:grid-cols-3 gap-4">
+          <div class="bg-white p-5 rounded-xl shadow-sm border border-slate-200">
+            <div class="flex justify-between items-center mb-2">
+              <span class="text-xs font-bold uppercase text-amber-700 bg-amber-50 px-2 py-1 rounded">Origen Lumbre</span>
+              <i class="fa-solid fa-fire text-amber-500 text-xl"></i>
+            </div>
+            <div class="text-2xl font-bold" id="dash-lumbre-neto">$0</div>
+            <div class="flex justify-between text-xs text-slate-500 mt-3 pt-2 border-t">
+              <span>Ing: <strong class="text-emerald-600" id="dash-lumbre-ing">$0</strong></span>
+              <span>Gast: <strong class="text-rose-600" id="dash-lumbre-gas">$0</strong></span>
+            </div>
+          </div>
+
+          <div class="bg-white p-5 rounded-xl shadow-sm border border-slate-200">
+            <div class="flex justify-between items-center mb-2">
+              <span class="text-xs font-bold uppercase text-rose-700 bg-rose-50 px-2 py-1 rounded">Navidad</span>
+              <i class="fa-solid fa-gifts text-rose-500 text-xl"></i>
+            </div>
+            <div class="text-2xl font-bold" id="dash-navidad-neto">$0</div>
+            <div class="flex justify-between text-xs text-slate-500 mt-3 pt-2 border-t">
+              <span>Ing: <strong class="text-emerald-600" id="dash-navidad-ing">$0</strong></span>
+              <span>Gast: <strong class="text-rose-600" id="dash-navidad-gas">$0</strong></span>
+            </div>
+          </div>
+
+          <div class="bg-white p-5 rounded-xl shadow-sm border border-slate-200">
+            <div class="flex justify-between items-center mb-2">
+              <span class="text-xs font-bold uppercase text-blue-700 bg-blue-50 px-2 py-1 rounded">Gastos Personales</span>
+              <i class="fa-solid fa-motorcycle text-blue-500 text-xl"></i>
+            </div>
+            <div class="text-2xl font-bold text-slate-700" id="dash-personal-gas">$0</div>
+            <p class="text-xs text-slate-400 mt-3 pt-2 border-t">Moto, bolsos y gustos personales</p>
+          </div>
+        </div>
+
+        <div class="bg-white p-5 rounded-xl shadow-sm border border-slate-200">
+          <h3 class="text-sm font-bold text-slate-700 mb-4">Balance General</h3>
+          <div class="h-60">
+            <canvas id="graficoBalance"></canvas>
+          </div>
+        </div>
+      </section>
+
+      <!-- REGISTRAR VENTA -->
+      <section id="sec-ventas" class="hidden max-w-lg mx-auto">
+        <div class="bg-white p-6 rounded-xl shadow-sm border border-slate-200 space-y-4">
+          <h2 class="text-base font-bold text-slate-800 flex items-center gap-2">
+            <i class="fa-solid fa-cart-plus text-emerald-600"></i> Registrar Venta
+          </h2>
+          <form id="formVenta" onsubmit="guardarVenta(event)" class="space-y-3">
+            <div>
+              <label class="block text-xs font-semibold text-slate-600 mb-1">Producto / Kit Comercial</label>
+              <select id="ventaProducto" onchange="actualizarPrecioSugerido()" class="w-full p-2.5 border rounded-lg bg-slate-50 text-sm" required>
+                <option value="">-- Seleccionar --</option>
+              </select>
+            </div>
+            <div class="grid grid-cols-2 gap-3">
+              <div>
+                <label class="block text-xs font-semibold text-slate-600 mb-1">Precio Venta ($)</label>
+                <input type="number" id="ventaPrecio" min="0" step="100" class="w-full p-2.5 border rounded-lg text-sm" required>
+              </div>
+              <div>
+                <label class="block text-xs font-semibold text-slate-600 mb-1">Cantidad</label>
+                <input type="number" id="ventaCantidad" min="1" value="1" class="w-full p-2.5 border rounded-lg text-sm" required>
+              </div>
+            </div>
+            <div>
+              <label class="block text-xs font-semibold text-slate-600 mb-1">Cliente</label>
+              <input type="text" id="ventaCliente" placeholder="Ej. Juan Pérez" class="w-full p-2.5 border rounded-lg text-sm">
+            </div>
+            <div>
+              <label class="block text-xs font-semibold text-slate-600 mb-1">Observación</label>
+              <input type="text" id="ventaObservaciones" placeholder="Ej. Pago Nequi" class="w-full p-2.5 border rounded-lg text-sm">
+            </div>
+            <button type="submit" class="w-full bg-emerald-600 hover:bg-emerald-700 text-white font-bold py-3 rounded-lg shadow transition">
+              Registrar y Descontar Stock
+            </button>
+          </form>
+        </div>
+      </section>
+
+      <!-- INVENTARIO VENTA -->
+      <section id="sec-inv-venta" class="hidden space-y-4">
+        <div class="flex justify-between items-center">
+          <h2 class="text-base font-bold text-slate-800">Productos para la Venta</h2>
+          <button onclick="abrirModal('modalProductoVenta')" class="bg-emerald-600 hover:bg-emerald-700 text-white px-3 py-1.5 rounded-lg text-xs font-bold flex items-center gap-1.5">
+            <i class="fa-solid fa-plus"></i> Crear Producto
+          </button>
+        </div>
+        <div class="bg-white rounded-xl shadow-sm border border-slate-200 overflow-x-auto">
+          <table class="w-full text-left text-xs">
+            <thead class="bg-slate-50 border-b uppercase text-slate-500">
+              <tr>
+                <th class="p-3">Producto</th>
+                <th class="p-3">Categoría</th>
+                <th class="p-3">Costo</th>
+                <th class="p-3">P. Venta</th>
+                <th class="p-3">Stock</th>
+                <th class="p-3 text-right">Acción</th>
+              </tr>
+            </thead>
+            <tbody id="tablaInvVenta" class="divide-y divide-slate-100"></tbody>
+          </table>
+        </div>
+      </section>
+
+      <!-- INVENTARIO USO -->
+      <section id="sec-inv-uso" class="hidden space-y-4">
+        <div class="flex justify-between items-center">
+          <h2 class="text-base font-bold text-slate-800">Herramientas & Equipos</h2>
+          <button onclick="abrirModal('modalProductoUso')" class="bg-amber-600 hover:bg-amber-700 text-white px-3 py-1.5 rounded-lg text-xs font-bold flex items-center gap-1.5">
+            <i class="fa-solid fa-plus"></i> Registrar Ítem
+          </button>
+        </div>
+        <div class="bg-white rounded-xl shadow-sm border border-slate-200 overflow-x-auto">
+          <table class="w-full text-left text-xs">
+            <thead class="bg-slate-50 border-b uppercase text-slate-500">
+              <tr>
+                <th class="p-3">Descripción</th>
+                <th class="p-3">Cuenta</th>
+                <th class="p-3">Costo</th>
+                <th class="p-3">Cant</th>
+                <th class="p-3 text-right">Acción</th>
+              </tr>
+            </thead>
+            <tbody id="tablaInvUso" class="divide-y divide-slate-100"></tbody>
+          </table>
+        </div>
+      </section>
+
+      <!-- HISTORIAL MOVIMIENTOS -->
+      <section id="sec-movimientos" class="hidden space-y-4">
+        <div class="flex justify-between items-center">
+          <h2 class="text-base font-bold text-slate-800">Historial Transaccional</h2>
+        </div>
+        <div class="bg-white rounded-xl shadow-sm border border-slate-200 overflow-x-auto">
+          <table class="w-full text-left text-xs">
+            <thead class="bg-slate-50 border-b uppercase text-slate-500">
+              <tr>
+                <th class="p-3">Fecha</th>
+                <th class="p-3">Tipo</th>
+                <th class="p-3">Cuenta</th>
+                <th class="p-3">Descripción</th>
+                <th class="p-3 text-right">Monto</th>
+              </tr>
+            </thead>
+            <tbody id="tablaMovimientos" class="divide-y divide-slate-100"></tbody>
+          </table>
+        </div>
+      </section>
+
+      <!-- CONFIGURACIÓN NUBE -->
+      <section id="sec-config" class="hidden max-w-lg mx-auto">
+        <div class="bg-white p-6 rounded-xl shadow-sm border border-slate-200 space-y-4">
+          <h2 class="text-base font-bold text-slate-800 flex items-center gap-2">
+            <i class="fa-solid fa-cloud-arrow-up text-blue-600"></i> Configuración de Sincronización
+          </h2>
+          <p class="text-xs text-slate-500">Pega aquí tu URL de Google Apps Script para sincronizar en tiempo real con Google Sheets en todos los celulares.</p>
+          <div>
+            <label class="block text-xs font-semibold text-slate-600 mb-1">URL de Apps Script (/exec)</label>
+            <input type="text" id="apiScriptUrl" placeholder="https://script.google.com/macros/s/.../exec" class="w-full p-2.5 border rounded-lg text-xs">
+          </div>
+          <button onclick="guardarApiUrl()" class="w-full bg-blue-600 hover:bg-blue-700 text-white font-bold py-2.5 rounded-lg text-xs transition">
+            Guardar y Sincronizar Nube
+          </button>
+        </div>
+      </section>
+
+    </main>
+
+    <!-- MODALES -->
+    <div id="modalProductoVenta" class="fixed inset-0 bg-slate-900/50 backdrop-blur-sm hidden flex justify-center items-center p-4 z-50">
+      <div class="bg-white rounded-xl p-5 max-w-sm w-full space-y-3">
+        <h3 class="font-bold text-slate-800 text-sm">Nuevo Producto / Kit</h3>
+        <form onsubmit="guardarProductoVenta(event)" class="space-y-2 text-xs">
+          <input type="text" id="pvNombre" placeholder="Nombre Producto" class="w-full p-2 border rounded" required>
+          <select id="pvCategoria" class="w-full p-2 border rounded" required>
+            <option value="Origen Lumbre">Origen Lumbre</option>
+            <option value="Navidad - Decoraciones">Navidad - Decoraciones</option>
+            <option value="Navidad - Velas">Navidad - Velas</option>
+          </select>
+          <div class="grid grid-cols-2 gap-2">
+            <input type="number" id="pvCosto" placeholder="Costo ($)" class="w-full p-2 border rounded" required>
+            <input type="number" id="pvPrecio" placeholder="Precio Venta ($)" class="w-full p-2 border rounded" required>
+          </div>
+          <input type="number" id="pvStock" placeholder="Stock Inicial" class="w-full p-2 border rounded" required>
+          <div class="flex justify-end gap-2 pt-2">
+            <button type="button" onclick="cerrarModal('modalProductoVenta')" class="px-3 py-1.5 border rounded">Cancelar</button>
+            <button type="submit" class="px-3 py-1.5 bg-emerald-600 text-white rounded font-bold">Guardar</button>
+          </div>
+        </form>
+      </div>
+    </div>
+
+    <div id="modalProductoUso" class="fixed inset-0 bg-slate-900/50 backdrop-blur-sm hidden flex justify-center items-center p-4 z-50">
+      <div class="bg-white rounded-xl p-5 max-w-sm w-full space-y-3">
+        <h3 class="font-bold text-slate-800 text-sm">Registrar Ítem Personal / Herramienta</h3>
+        <form onsubmit="guardarProductoUso(event)" class="space-y-2 text-xs">
+          <input type="text" id="puNombre" placeholder="Descripción" class="w-full p-2 border rounded" required>
+          <select id="puCategoria" class="w-full p-2 border rounded" required>
+            <option value="Origen Lumbre - Herramientas">Origen Lumbre - Herramientas</option>
+            <option value="Navidad - Herramientas">Navidad - Herramientas</option>
+            <option value="Gastos Personales">Gastos Personales</option>
+          </select>
+          <div class="grid grid-cols-2 gap-2">
+            <input type="number" id="puCosto" placeholder="Costo ($)" class="w-full p-2 border rounded" required>
+            <input type="number" id="puCantidad" value="1" placeholder="Cantidad" class="w-full p-2 border rounded" required>
+          </div>
+          <div class="flex justify-end gap-2 pt-2">
+            <button type="button" onclick="cerrarModal('modalProductoUso')" class="px-3 py-1.5 border rounded">Cancelar</button>
+            <button type="submit" class="px-3 py-1.5 bg-amber-600 text-white rounded font-bold">Guardar</button>
+          </div>
+        </form>
+      </div>
+    </div>
+
+  </div>
+
+  <script>
+    const USER_OK = "origenlumbre";
+    const PASS_OK = "navidad2026";
+    let scriptApiUrl = localStorage.getItem('SCRIPT_API_URL') || '';
+
+    let datos = JSON.parse(localStorage.getItem('SISTEMA_FINANCIERO_DATOS')) || {
+      invVenta: [
+        { id: 1, nombre: 'Guirnalda de Luces LED 10M', categoria: 'Navidad - Decoraciones', costo: 4723, precio: 12000, stock: 2 },
+        { id: 2, nombre: 'Gorro Decorativo Navideño', categoria: 'Navidad - Decoraciones', costo: 6006, precio: 15000, stock: 3 },
+        { id: 3, nombre: 'Grasa de Cerdo (Tarro)', categoria: 'Origen Lumbre', costo: 8000, precio: 18000, stock: 20 }
+      ],
+      invUso: [
+        { id: 1, nombre: 'Termómetro Digital', categoria: 'Origen Lumbre - Herramientas', costo: 16934, cantidad: 1 },
+        { id: 2, nombre: 'Molde de silicona estilo 2', categoria: 'Navidad - Herramientas', costo: 14453, cantidad: 1 }
+      ],
+      movimientos: []
+    };
+
+    let miGrafico = null;
+
+    function validarLogin(e) {
+      e.preventDefault();
+      const u = document.getElementById('loginUser').value;
+      const p = document.getElementById('loginPass').value;
+
+      if (u === USER_OK && p === PASS_OK) {
+        document.getElementById('loginSection').classList.add('hidden');
+        document.getElementById('appSection').classList.remove('hidden');
+        inicializarApp();
+      } else {
+        document.getElementById('loginError').classList.remove('hidden');
+      }
+    }
+
+    function cerrarSesion() {
+      document.getElementById('appSection').classList.add('hidden');
+      document.getElementById('loginSection').classList.remove('hidden');
+    }
+
+    function inicializarApp() {
+      if (scriptApiUrl) {
+        document.getElementById('syncStatus').innerHTML = '<i class="fa-solid fa-cloud-check text-emerald-400"></i> Nube Activa';
+        document.getElementById('apiScriptUrl').value = scriptApiUrl;
+      }
+      guardarYActualizar();
+    }
+
+    function guardarYActualizar() {
+      localStorage.setItem('SISTEMA_FINANCIERO_DATOS', JSON.stringify(datos));
+      renderizarDashboard();
+      renderizarTablas();
+      cargarSelectProductosVenta();
+
+      if (scriptApiUrl) {
+        fetch(scriptApiUrl, {
+          method: 'POST',
+          mode: 'no-cors',
+          headers: { 'Content-Type': 'application/json' },
+          body: JSON.stringify([
+            ['Módulo', 'Datos_JSON'],
+            ['InventarioVenta', JSON.stringify(datos.invVenta)],
+            ['InventarioUso', JSON.stringify(datos.invUso)],
+            ['Movimientos', JSON.stringify(datos.movimientos)]
+          ])
+        });
+      }
+    }
+
+    function guardarApiUrl() {
+      const url = document.getElementById('apiScriptUrl').value.trim();
+      if (url) {
+        localStorage.setItem('SCRIPT_API_URL', url);
+        scriptApiUrl = url;
+        alert('¡URL guardada y sincronizada correctamente!');
+        inicializarApp();
+      }
+    }
+
+    function cambiarPestana(id) {
+      document.querySelectorAll('section').forEach(s => s.classList.add('hidden'));
+      document.querySelectorAll('.tab-btn').forEach(b => b.classList.remove('active'));
+      document.getElementById('sec-' + id).classList.remove('hidden');
+      document.getElementById('tab-' + id).classList.add('active');
+    }
+
+    function formatoMoneda(v) {
+      return new Intl.NumberFormat('es-CO', { style: 'currency', currency: 'COP', maximumFractionDigits: 0 }).format(v);
+    }
+
+    function renderizarDashboard() {
+      let calc = { lumbreIng: 0, lumbreGas: 0, navidadIng: 0, navidadGas: 0, personalGas: 0 };
+      datos.movimientos.forEach(m => {
+        if (m.cuenta === 'Origen Lumbre') m.tipo === 'Ingreso' ? calc.lumbreIng += m.monto : calc.lumbreGas += m.monto;
+        else if (m.cuenta === 'Navidad') m.tipo === 'Ingreso' ? calc.navidadIng += m.monto : calc.navidadGas += m.monto;
+        else if (m.cuenta === 'Gastos Personales') calc.personalGas += m.monto;
+      });
+
+      document.getElementById('dash-lumbre-neto').textContent = formatoMoneda(calc.lumbreIng - calc.lumbreGas);
+      document.getElementById('dash-lumbre-ing').textContent = formatoMoneda(calc.lumbreIng);
+      document.getElementById('dash-lumbre-gas').textContent = formatoMoneda(calc.lumbreGas);
+
+      document.getElementById('dash-navidad-neto').textContent = formatoMoneda(calc.navidadIng - calc.navidadGas);
+      document.getElementById('dash-navidad-ing').textContent = formatoMoneda(calc.navidadIng);
+      document.getElementById('dash-navidad-gas').textContent = formatoMoneda(calc.navidadGas);
+
+      document.getElementById('dash-personal-gas').textContent = formatoMoneda(calc.personalGas);
+
+      const ctx = document.getElementById('graficoBalance').getContext('2d');
+      if (miGrafico) miGrafico.destroy();
+      miGrafico = new Chart(ctx, {
+        type: 'bar',
+        data: {
+          labels: ['Origen Lumbre', 'Navidad', 'Personales'],
+          datasets: [
+            { label: 'Ingresos', data: [calc.lumbreIng, calc.navidadIng, 0], backgroundColor: '#10b981' },
+            { label: 'Gastos', data: [calc.lumbreGas, calc.navidadGas, calc.personalGas], backgroundColor: '#f43f5e' }
+          ]
+        },
+        options: { responsive: true, maintainAspectRatio: false }
+      });
+    }
+
+    function renderizarTablas() {
+      document.getElementById('tablaInvVenta').innerHTML = datos.invVenta.map(p => `
+        <tr>
+          <td class="p-3 font-bold">${p.nombre}</td>
+          <td class="p-3">${p.categoria}</td>
+          <td class="p-3">${formatoMoneda(p.costo)}</td>
+          <td class="p-3 text-emerald-600 font-bold">${formatoMoneda(p.precio)}</td>
+          <td class="p-3 font-bold">${p.stock}</td>
+          <td class="p-3 text-right"><button onclick="eliminarVenta(${p.id})" class="text-rose-500"><i class="fa-solid fa-trash"></i></button></td>
+        </tr>`).join('');
+
+      document.getElementById('tablaInvUso').innerHTML = datos.invUso.map(p => `
+        <tr>
+          <td class="p-3 font-bold">${p.nombre}</td>
+          <td class="p-3">${p.categoria}</td>
+          <td class="p-3">${formatoMoneda(p.costo)}</td>
+          <td class="p-3">${p.cantidad}</td>
+          <td class="p-3 text-right"><button onclick="eliminarUso(${p.id})" class="text-rose-500"><i class="fa-solid fa-trash"></i></button></td>
+        </tr>`).join('');
+
+      document.getElementById('tablaMovimientos').innerHTML = datos.movimientos.map(m => `
+        <tr>
+          <td class="p-3 text-slate-400">${m.fecha}</td>
+          <td class="p-3 font-bold ${m.tipo === 'Ingreso' ? 'text-emerald-600' : 'text-rose-600'}">${m.tipo}</td>
+          <td class="p-3">${m.cuenta}</td>
+          <td class="p-3">${m.descripcion}</td>
+          <td class="p-3 text-right font-bold">${formatoMoneda(m.monto)}</td>
+        </tr>`).join('');
+    }
+
+    function cargarSelectProductosVenta() {
+      const select = document.getElementById('ventaProducto');
+      select.innerHTML = '<option value="">-- Seleccionar --</option>' + 
+        datos.invVenta.map(p => `<option value="${p.id}">${p.nombre} (Stock: ${p.stock})</option>`).join('');
+    }
+
+    function actualizarPrecioSugerido() {
+      const id = document.getElementById('ventaProducto').value;
+      const prod = datos.invVenta.find(p => p.id == id);
+      if (prod) document.getElementById('ventaPrecio').value = prod.precio;
+    }
+
+    function guardarVenta(e) {
+      e.preventDefault();
+      const id = document.getElementById('ventaProducto').value;
+      const prod = datos.invVenta.find(p => p.id == id);
+      const cant = parseInt(document.getElementById('ventaCantidad').value);
+      const precio = parseFloat(document.getElementById('ventaPrecio').value);
+      const cliente = document.getElementById('ventaCliente').value;
+
+      if (!prod || cant > prod.stock) {
+        alert('Stock insuficiente o producto no seleccionado');
+        return;
+      }
+
+      prod.stock -= cant;
+      const cuenta = prod.categoria.startsWith('Navidad') ? 'Navidad' : 'Origen Lumbre';
+
+      datos.movimientos.unshift({
+        id: Date.now(),
+        fecha: new Date().toISOString().split('T')[0],
+        tipo: 'Ingreso',
+        cuenta: cuenta,
+        descripcion: `Venta: ${prod.nombre} x${cant} (${cliente || 'Varios'})`,
+        monto: precio * cant
+      });
+
+      guardarYActualizar();
+      document.getElementById('formVenta').reset();
+      alert('¡Venta registrada exitosamente!');
+      cambiarPestana('dashboard');
+    }
+
+    function guardarProductoVenta(e) {
+      e.preventDefault();
+      datos.invVenta.push({
+        id: Date.now(),
+        nombre: document.getElementById('pvNombre').value,
+        categoria: document.getElementById('pvCategoria').value,
+        costo: parseFloat(document.getElementById('pvCosto').value),
+        precio: parseFloat(document.getElementById('pvPrecio').value),
+        stock: parseInt(document.getElementById('pvStock').value)
+      });
+      guardarYActualizar();
+      cerrarModal('modalProductoVenta');
+    }
+
+    function guardarProductoUso(e) {
+      e.preventDefault();
+      datos.invUso.push({
+        id: Date.now(),
+        nombre: document.getElementById('puNombre').value,
+        categoria: document.getElementById('puCategoria').value,
+        costo: parseFloat(document.getElementById('puCosto').value),
+        cantidad: parseInt(document.getElementById('puCantidad').value)
+      });
+      guardarYActualizar();
+      cerrarModal('modalProductoUso');
+    }
+
+    function eliminarVenta(id) { if(confirm('¿Eliminar?')) { datos.invVenta = datos.invVenta.filter(p => p.id !== id); guardarYActualizar(); } }
+    function eliminarUso(id) { if(confirm('¿Eliminar?')) { datos.invUso = datos.invUso.filter(p => p.id !== id); guardarYActualizar(); } }
+
+    function abrirModal(id) { document.getElementById(id).classList.remove('hidden'); }
+    function cerrarModal(id) { document.getElementById(id).classList.add('hidden'); }
+  </script>
+</body>
+</html>
