@@ -450,6 +450,9 @@
       movimientos: [],
       gastosCaja: []
     };
+    
+    // Forzamos que se guarden los datos iniciales para que el celular nunca inicie en blanco
+    localStorage.setItem('SISTEMA_FINANCIERO_DATOS_V4', JSON.stringify(datos));
 
     let miGrafico = null;
 
