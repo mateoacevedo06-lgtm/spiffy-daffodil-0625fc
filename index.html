@@ -18,6 +18,10 @@
   <script src="https://cdnjs.cloudflare.com/ajax/libs/html2canvas/1.4.1/html2canvas.min.js"></script>
   <script src="https://cdnjs.cloudflare.com/ajax/libs/jspdf/2.5.1/jspdf.umd.min.js"></script>
 
+  <!-- LIBRERÍAS OFICIALES DE FIREBASE -->
+  <script src="https://www.gstatic.com/firebasejs/9.23.0/firebase-app-compat.js"></script>
+  <script src="https://www.gstatic.com/firebasejs/9.23.0/firebase-database-compat.js"></script>
+
   <style>
     .tab-btn.active {
       border-bottom: 3px solid #10b981;
@@ -72,10 +76,13 @@
           <i class="fa-solid fa-chart-pie text-emerald-400 text-2xl"></i>
           <div>
             <h1 class="text-base font-bold leading-tight">Control Financiero</h1>
-            <p class="text-[11px] text-emerald-400 font-medium">Mate y Lau <span class="text-[9px] text-emerald-400 font-bold ml-1">(Sistema Activo)</span></p>
+            <p class="text-[11px] text-emerald-400 font-medium">Mate y Lau <span id="syncStatus" class="text-[9px] text-emerald-400 font-bold ml-1">(Sistema Estable)</span></p>
           </div>
         </div>
         <div class="flex items-center gap-3">
+          <button onclick="sincronizarConNube()" class="bg-slate-800 hover:bg-slate-700 text-white px-2.5 py-1.5 rounded text-xs font-bold transition flex items-center gap-1">
+            <i class="fa-solid fa-rotate"></i> Sincronizar
+          </button>
           <button onclick="cambiarPestana('ventas')" class="bg-emerald-600 hover:bg-emerald-700 text-white px-3 py-1.5 rounded-lg text-xs font-bold shadow flex items-center gap-1.5 transition">
             <i class="fa-solid fa-plus"></i> + Registrar Venta
           </button>
@@ -432,6 +439,16 @@
       navigator.serviceWorker.register('sw.js').catch(() => {});
     }
 
+    const firebaseConfig = {
+      databaseURL: "https://control-mate-y-lau-84d9c-default-rtdb.firebaseio.com"
+    };
+
+    if (!firebase.apps.length) {
+      firebase.initializeApp(firebaseConfig);
+    }
+    const db = firebase.database();
+    const dbRef = db.ref('datos');
+
     let credenciales = JSON.parse(localStorage.getItem('CF_CREDENCIALES_V4')) || {
       user: "origenlumbre",
       pass: "navidad2026",
@@ -450,11 +467,58 @@
       movimientos: [],
       gastosCaja: []
     };
-    
-    // Forzamos que se guarden los datos iniciales para que el celular nunca inicie en blanco
-    localStorage.setItem('SISTEMA_FINANCIERO_DATOS_V4', JSON.stringify(datos));
 
     let miGrafico = null;
+
+    // CARGA INICIAL ESTABLE Y RÁPIDA (SIN BUCLES)
+    function sincronizarConNube() {
+      const statusEl = document.getElementById('syncStatus');
+      statusEl.textContent = '(Cargando nube...)';
+      statusEl.className = "text-[9px] text-amber-300 font-bold ml-1";
+
+      dbRef.once('value').then((snapshot) => {
+        const data = snapshot.val();
+        if (data && data.productos) {
+          datos = data;
+          localStorage.setItem('SISTEMA_FINANCIERO_DATOS_V4', JSON.stringify(datos));
+        } else {
+          dbRef.set(datos);
+        }
+        statusEl.textContent = '(Sincronizado 👌)';
+        statusEl.className = "text-[9px] text-emerald-400 font-bold ml-1";
+        actualizarPantallaCompleta();
+      }).catch(() => {
+        statusEl.textContent = '(Modo Local)';
+        statusEl.className = "text-[9px] text-slate-400 ml-1";
+        actualizarPantallaCompleta();
+      });
+    }
+
+    function guardarYActualizar() {
+      // 1. Guardado inmediato en memoria local para velocidad instantánea
+      localStorage.setItem('SISTEMA_FINANCIERO_DATOS_V4', JSON.stringify(datos));
+      actualizarPantallaCompleta();
+
+      // 2. Envío a la nube en segundo plano sin congelar
+      const statusEl = document.getElementById('syncStatus');
+      statusEl.textContent = '(Guardando...)';
+      statusEl.className = "text-[9px] text-amber-300 font-bold ml-1";
+
+      dbRef.set(datos).then(() => {
+        statusEl.textContent = '(Sincronizado 👌)';
+        statusEl.className = "text-[9px] text-emerald-400 font-bold ml-1";
+      }).catch(() => {
+        statusEl.textContent = '(Modo Local)';
+        statusEl.className = "text-[9px] text-slate-400 ml-1";
+      });
+    }
+
+    function actualizarPantallaCompleta() {
+      renderizarDashboard();
+      renderizarInventario();
+      renderizarHistorial();
+      cargarSelectProductosVenta();
+    }
 
     window.onload = function() {
       if (localStorage.getItem('CF_SESION_ACTIVA') === 'true') {
@@ -487,11 +551,7 @@
       document.getElementById('cfgUsuario').value = credenciales.user;
       document.getElementById('cfgPassword').value = credenciales.pass;
       document.getElementById('cfgPin').value = credenciales.pin;
-      
-      renderizarDashboard();
-      renderizarInventario();
-      renderizarHistorial();
-      cargarSelectProductosVenta();
+      sincronizarConNube();
     }
 
     function cambiarFiltroDashboard() {
@@ -522,14 +582,6 @@
       renderizarDashboard();
     }
 
-    function guardarYActualizar() {
-      localStorage.setItem('SISTEMA_FINANCIERO_DATOS_V4', JSON.stringify(datos));
-      renderizarDashboard();
-      renderizarInventario();
-      renderizarHistorial();
-      cargarSelectProductosVenta();
-    }
-
     function cambiarPestana(pestana) {
       ['dashboard', 'ventas', 'gastos-caja', 'inventario', 'historial', 'config'].forEach(p => {
         document.getElementById('sec-' + p).classList.add('hidden');
@@ -549,6 +601,9 @@
       const precio = parseFloat(document.getElementById('ventaPrecio').value);
       const cantidad = parseInt(document.getElementById('ventaCantidad').value);
       const cliente = document.getElementById('ventaCliente').value || 'Cliente General';
+
+      if (!datos.productos) datos.productos = [];
+      if (!datos.movimientos) datos.movimientos = [];
 
       const producto = datos.productos.find(p => p.id === prodId);
       if (!producto) return;
@@ -591,6 +646,8 @@
       const concepto = document.getElementById('gastoConcepto').value;
       const monto = parseFloat(document.getElementById('gastoMonto').value);
 
+      if (!datos.gastosCaja) datos.gastosCaja = [];
+
       const gasto = {
         id: Date.now(),
         fecha: new Date().toISOString().split('T')[0],
@@ -611,20 +668,24 @@
       const select = document.getElementById('ventaProdId');
       select.innerHTML = '<option value="">-- Seleccionar --</option>';
       
-      datos.productos.filter(p => p.categoria === cat).forEach(p => {
-        select.innerHTML += `<option value="${p.id}">${p.nombre} (Stock: ${p.stock})</option>`;
-      });
+      if (datos.productos) {
+        datos.productos.filter(p => p.categoria === cat).forEach(p => {
+          select.innerHTML += `<option value="${p.id}">${p.nombre} (Stock: ${p.stock})</option>`;
+        });
+      }
       actualizarPrecioVenta();
     }
 
     function actualizarPrecioVenta() {
       const prodId = parseInt(document.getElementById('ventaProdId').value);
-      const producto = datos.productos.find(p => p.id === prodId);
-      if (producto) {
-        document.getElementById('ventaPrecio').value = producto.precio;
-      } else {
-        document.getElementById('ventaPrecio').value = '';
+      if (datos.productos) {
+        const producto = datos.productos.find(p => p.id === prodId);
+        if (producto) {
+          document.getElementById('ventaPrecio').value = producto.precio;
+          return;
+        }
       }
+      document.getElementById('ventaPrecio').value = '';
     }
 
     function renderizarInventario() {
@@ -632,6 +693,8 @@
       const filtroCat = document.getElementById('invFiltroCat').value;
       const tbody = document.getElementById('tablaInventario');
       tbody.innerHTML = '';
+
+      if (!datos.productos) return;
 
       let filtrados = datos.productos.filter(p => {
         const coincideTexto = p.nombre.toLowerCase().includes(buscar);
@@ -660,9 +723,12 @@
       const tbody = document.getElementById('tablaHistorial');
       tbody.innerHTML = '';
 
+      const movs = datos.movimientos || [];
+      const gastos = datos.gastosCaja || [];
+
       let todosOps = [
-        ...datos.movimientos.map(m => ({ ...m, tipoOp: 'Venta' })),
-        ...datos.gastosCaja.map(g => ({ ...g, tipoOp: 'Gasto' }))
+        ...movs.map(m => ({ ...m, tipoOp: 'Venta' })),
+        ...gastos.map(g => ({ ...g, tipoOp: 'Gasto' }))
       ].sort((a, b) => b.id - a.id);
 
       if (filtroCat !== 'Todos') {
@@ -685,8 +751,9 @@
 
     function renderizarDashboard() {
       const filtro = document.getElementById('dashFiltro').value;
-      let movs = datos.movimientos;
-      let gastos = datos.gastosCaja;
+      let movs = datos.movimientos || [];
+      let gastos = datos.gastosCaja || [];
+      let productos = datos.productos || [];
 
       if (filtro !== 'Todos') {
         movs = movs.filter(m => m.categoria === filtro);
@@ -701,7 +768,7 @@
       const ventasCosto = movs.reduce((acc, m) => acc + (m.costoTotal || 0), 0);
       const gananciaBruta = movs.reduce((acc, m) => acc + (m.monto - (m.costoTotal || 0)), 0);
       
-      const totalInvertido = datos.productos.reduce((acc, p) => acc + (p.costo * p.stock), 0);
+      const totalInvertido = productos.reduce((acc, p) => acc + (p.costo * p.stock), 0);
       const totalGastosCaja = gastos.reduce((acc, g) => acc + g.monto, 0);
       const utilidadLimpia = gananciaBruta - totalGastosCaja;
 
@@ -758,6 +825,8 @@
       const precio = parseFloat(document.getElementById('prodPrecio').value);
       const stock = parseInt(document.getElementById('prodStock').value);
 
+      if (!datos.productos) datos.productos = [];
+
       if (id) {
         const p = datos.productos.find(item => item.id == id);
         if (p) {
@@ -776,6 +845,7 @@
     }
 
     function editarProducto(id) {
+      if (!datos.productos) return;
       const p = datos.productos.find(item => item.id === id);
       if (!p) return;
       document.getElementById('modalProductoTitulo').textContent = 'Editar Producto';
@@ -790,17 +860,19 @@
 
     function eliminarProducto(id) {
       if (confirm('¿Eliminar este producto?')) {
-        datos.productos = datos.productos.filter(p => p.id !== id);
-        guardarYActualizar();
+        if (datos.productos) {
+          datos.productos = datos.productos.filter(p => p.id !== id);
+          guardarYActualizar();
+        }
       }
     }
 
     function eliminarOperacion(id, tipoOp) {
       if (confirm('¿Deseas eliminar esta operación?')) {
         if (tipoOp === 'Venta') {
-          datos.movimientos = datos.movimientos.filter(m => m.id !== id);
+          if (datos.movimientos) datos.movimientos = datos.movimientos.filter(m => m.id !== id);
         } else {
-          datos.gastosCaja = datos.gastosCaja.filter(g => g.id !== id);
+          if (datos.gastosCaja) datos.gastosCaja = datos.gastosCaja.filter(g => g.id !== id);
         }
         guardarYActualizar();
       }
@@ -808,6 +880,8 @@
 
     function procesarPlanoMasivo() {
       const lineas = document.getElementById('txtPlano').value.split('\n');
+      if (!datos.productos) datos.productos = [];
+
       lineas.forEach(l => {
         const partes = l.split(',');
         if (partes.length >= 5) {
@@ -828,9 +902,11 @@
 
     function exportarExcel() {
       let csv = 'ID,Nombre,Categoria,Costo,Precio,Stock\n';
-      datos.productos.forEach(p => {
-        csv += `${p.id},"${p.nombre}","${p.categoria}",${p.costo},${p.precio},${p.stock}\n`;
-      });
+      if (datos.productos) {
+        datos.productos.forEach(p => {
+          csv += `${p.id},"${p.nombre}","${p.categoria}",${p.costo},${p.precio},${p.stock}\n`;
+        });
+      }
       const blob = new Blob([csv], { type: 'text/csv;charset=utf-8;' });
       const link = document.createElement('a');
       link.href = URL.createObjectURL(blob);
