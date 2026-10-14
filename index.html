@@ -36,6 +36,10 @@
       box-sizing: border-box;
     }
     button:disabled { opacity: .5; cursor: not-allowed; }
+    .chip-periodo { color: #64748b; }
+    .chip-periodo.activo { background: #fff; color: #047857; box-shadow: 0 1px 2px rgba(0,0,0,.08); }
+    .vista-btn { background: #fff; color: #475569; border-color: #e2e8f0; }
+    .vista-btn.activo { background: #0f172a; color: #fff; border-color: #0f172a; }
   </style>
 </head>
 <body class="bg-slate-100 text-slate-800 font-sans min-h-screen">
@@ -113,92 +117,130 @@
     <main class="max-w-7xl mx-auto p-4 space-y-6">
 
       <!-- ===================== DASHBOARD ===================== -->
-      <section id="sec-dashboard" class="space-y-6">
-        <div class="bg-white p-4 rounded-xl shadow-sm border border-slate-200 flex flex-col lg:flex-row justify-between items-start lg:items-center gap-4">
-          <div class="flex items-center gap-2 text-xs font-bold text-slate-700 uppercase">
-            <i class="fa-solid fa-filter text-emerald-600 text-sm"></i><span>Filtrar Análisis Financiero:</span>
+      <section id="sec-dashboard" class="space-y-4">
+
+        <!-- Filtros: proyecto + periodo -->
+        <div class="bg-white p-3 rounded-xl shadow-sm border border-slate-200 space-y-3">
+          <div class="flex flex-col sm:flex-row gap-2 sm:items-center sm:justify-between">
+            <select id="dashFiltro" onchange="cambiarFiltroDashboard()" class="p-2.5 border rounded-lg text-sm bg-slate-50 font-bold text-slate-800 sm:w-72">
+              <option value="Navidad">🎄 Proyecto Navidad</option>
+              <option value="Gastos Personales">👤 Gastos Personales</option>
+              <option value="Origen Lumbre">🔥 Origen Lumbre (🔒 PIN)</option>
+            </select>
+            <div class="flex gap-1 bg-slate-100 p-1 rounded-lg text-xs font-bold overflow-x-auto">
+              <button onclick="elegirPeriodo('hoy')"    data-periodo="hoy"    class="chip-periodo px-3 py-1.5 rounded-md whitespace-nowrap">Hoy</button>
+              <button onclick="elegirPeriodo('semana')" data-periodo="semana" class="chip-periodo px-3 py-1.5 rounded-md whitespace-nowrap">Semana</button>
+              <button onclick="elegirPeriodo('mes')"    data-periodo="mes"    class="chip-periodo px-3 py-1.5 rounded-md whitespace-nowrap">Mes</button>
+              <button onclick="elegirPeriodo('todo')"   data-periodo="todo"   class="chip-periodo activo px-3 py-1.5 rounded-md whitespace-nowrap">Todo</button>
+              <button onclick="elegirPeriodo('rango')"  data-periodo="rango"  class="chip-periodo px-3 py-1.5 rounded-md whitespace-nowrap"><i class="fa-regular fa-calendar"></i> Fechas</button>
+            </div>
           </div>
-          <div class="grid grid-cols-1 sm:grid-cols-2 md:grid-cols-4 gap-2 w-full lg:w-auto">
-            <select id="dashFiltro" onchange="cambiarFiltroDashboard()" class="p-2 border rounded-lg text-xs bg-slate-50 font-semibold text-slate-800">
-              <option value="Navidad">Proyecto Navidad</option>
-              <option value="Gastos Personales">Gastos Personales</option>
-              <option value="Origen Lumbre">Comercial / Origen Lumbre (🔒 PIN)</option>
-            </select>
-            <select id="dashFiltroMetodo" onchange="renderizarDashboard()" class="p-2 border rounded-lg text-xs bg-slate-50 font-semibold text-slate-800">
-              <option value="Todos">Todos los métodos</option>
-              <option value="Efectivo">💵 Efectivo</option>
-              <option value="Nequi">🟣 Nequi</option>
-              <option value="Bancolombia">🟡 Bancolombia</option>
-              <option value="Daviplata">🔴 Daviplata</option>
-            </select>
-            <div class="flex items-center gap-1 bg-slate-50 p-1.5 border rounded-lg text-xs">
+          <div id="rangoPersonalizado" class="hidden grid grid-cols-2 gap-2">
+            <div class="flex items-center gap-1 bg-slate-50 p-2 border rounded-lg text-xs">
               <span class="text-slate-400 font-semibold">Desde:</span>
               <input type="date" id="dashFiltroDesde" onchange="renderizarDashboard()" class="bg-transparent outline-none font-semibold text-slate-800 w-full">
             </div>
-            <div class="flex items-center gap-1 bg-slate-50 p-1.5 border rounded-lg text-xs">
+            <div class="flex items-center gap-1 bg-slate-50 p-2 border rounded-lg text-xs">
               <span class="text-slate-400 font-semibold">Hasta:</span>
               <input type="date" id="dashFiltroHasta" onchange="renderizarDashboard()" class="bg-transparent outline-none font-semibold text-slate-800 w-full">
             </div>
           </div>
-          <div class="flex gap-2 self-end lg:self-center">
-            <button onclick="verHoy()" class="bg-emerald-100 hover:bg-emerald-200 text-emerald-800 px-3 py-2 rounded-lg text-xs font-bold transition">Hoy</button>
-            <button onclick="limpiarFiltrosDashboard()" class="bg-slate-200 hover:bg-slate-300 text-slate-700 px-3 py-2 rounded-lg text-xs font-bold transition">Limpiar</button>
-          </div>
         </div>
 
-        <div class="grid grid-cols-2 md:grid-cols-4 gap-4">
-          <div class="bg-white p-4 rounded-xl shadow-sm border border-slate-200">
-            <span class="text-[11px] font-bold uppercase text-slate-400">Ventas Filtradas</span>
-            <div class="text-xl font-bold text-slate-800 mt-1" id="dashVentasFiltradas">$0</div>
-          </div>
-          <div class="bg-white p-4 rounded-xl shadow-sm border border-slate-200">
-            <span class="text-[11px] font-bold uppercase text-slate-400">Ventas del Mes</span>
-            <div class="text-xl font-bold text-emerald-600 mt-1" id="dashVentasMes">$0</div>
-          </div>
-          <div class="bg-white p-4 rounded-xl shadow-sm border border-slate-200">
-            <span class="text-[11px] font-bold uppercase text-slate-400">Costo de Ventas</span>
-            <div class="text-xl font-bold text-amber-600 mt-1" id="dashVentasCosto">$0</div>
-          </div>
-          <div class="bg-white p-4 rounded-xl shadow-sm border border-slate-200">
-            <span class="text-[11px] font-bold uppercase text-slate-400">Ganancia Bruta</span>
-            <div class="text-xl font-bold text-blue-600 mt-1" id="dashGananciaBruta">$0</div>
-          </div>
+        <!-- Qué quiero ver -->
+        <div class="flex gap-2 overflow-x-auto pb-1 text-xs font-bold">
+          <button onclick="elegirVista('resumen')"    data-vista="resumen"    class="vista-btn activo px-4 py-2 rounded-full border whitespace-nowrap"><i class="fa-solid fa-house"></i> Resumen</button>
+          <button onclick="elegirVista('medios')"     data-vista="medios"     class="vista-btn px-4 py-2 rounded-full border whitespace-nowrap"><i class="fa-solid fa-cash-register"></i> Medios de pago</button>
+          <button onclick="elegirVista('ganancias')"  data-vista="ganancias"  class="vista-btn px-4 py-2 rounded-full border whitespace-nowrap"><i class="fa-solid fa-chart-column"></i> Ganancias</button>
+          <button onclick="elegirVista('inventario')" data-vista="inventario" class="vista-btn px-4 py-2 rounded-full border whitespace-nowrap"><i class="fa-solid fa-boxes-stacked"></i> Inventario</button>
         </div>
 
-        <div class="grid grid-cols-1 md:grid-cols-3 gap-4">
-          <div class="bg-white p-5 rounded-xl shadow-sm border border-slate-200">
-            <span class="text-xs font-bold uppercase text-slate-500">Valor en Inventario</span>
-            <div class="text-2xl font-bold text-slate-800 mt-1" id="dashTotalInvertido">$0</div>
-          </div>
-          <div class="bg-white p-5 rounded-xl shadow-sm border border-slate-200">
-            <span class="text-xs font-bold uppercase text-slate-500">Gastos Operativos / Caja</span>
-            <div class="text-2xl font-bold text-rose-600 mt-1" id="dashTotalGastosCaja">$0</div>
-          </div>
-          <div class="bg-white p-5 rounded-xl shadow-sm border border-slate-200">
-            <span class="text-xs font-bold uppercase text-slate-500">Utilidad Real Limpia</span>
-            <div class="text-2xl font-bold text-emerald-600 mt-1" id="dashUtilidadLimpia">$0</div>
-          </div>
+        <p id="dashRango" class="text-[11px] text-slate-500 px-1"></p>
+
+        <!-- Bloqueo Origen Lumbre -->
+        <div id="dashBloqueado" class="hidden bg-white p-8 rounded-xl shadow-sm border border-slate-200 text-center space-y-3">
+          <div class="text-3xl">🔒</div>
+          <p class="text-sm text-slate-600">Ingresa el PIN para ver los números de Origen Lumbre.</p>
+          <button onclick="cambiarFiltroDashboard()" class="bg-slate-900 text-white px-4 py-2 rounded-lg text-xs font-bold">Ingresar PIN</button>
         </div>
 
-        <!-- Cuadre de caja -->
-        <div class="bg-white p-5 rounded-xl shadow-sm border border-slate-200">
-          <div class="flex justify-between items-start gap-2 mb-1">
-            <h3 class="text-sm font-bold text-slate-700 flex items-center gap-2"><i class="fa-solid fa-cash-register text-emerald-600"></i> Cuadre de Caja por Método de Pago</h3>
-          </div>
-          <p id="cuadreRango" class="text-[11px] text-slate-500 mb-3"></p>
-          <div class="overflow-x-auto">
-            <table class="w-full text-left text-xs">
-              <thead class="bg-slate-50 border-b uppercase text-slate-500">
-                <tr><th class="p-2.5">Método</th><th class="p-2.5 text-right">Entró (ventas)</th><th class="p-2.5 text-right">Salió (gastos)</th><th class="p-2.5 text-right">Debe haber</th></tr>
-              </thead>
-              <tbody id="tablaCuadre" class="divide-y divide-slate-100"></tbody>
-            </table>
-          </div>
-        </div>
+        <div id="dashContenido" class="space-y-4">
 
-        <div class="bg-white p-5 rounded-xl shadow-sm border border-slate-200">
-          <h3 class="text-sm font-bold text-slate-700 mb-4">Comportamiento Financiero</h3>
-          <div class="h-60"><canvas id="graficoDashboard"></canvas></div>
+          <!-- VISTA: RESUMEN -->
+          <div id="vista-resumen" class="vista-dash grid grid-cols-1 sm:grid-cols-3 gap-4">
+            <div class="bg-white p-5 rounded-xl shadow-sm border border-slate-200">
+              <span class="text-[11px] font-bold uppercase text-slate-400"><i class="fa-solid fa-arrow-trend-up text-emerald-500"></i> Vendido</span>
+              <div class="text-3xl font-bold text-slate-800 mt-1" id="dashVentas">$0</div>
+              <p class="text-[11px] text-slate-500 mt-1" id="dashVentasSub"></p>
+            </div>
+            <div class="bg-white p-5 rounded-xl shadow-sm border border-slate-200">
+              <span class="text-[11px] font-bold uppercase text-slate-400"><i class="fa-solid fa-arrow-trend-down text-rose-500"></i> Gastos</span>
+              <div class="text-3xl font-bold text-rose-600 mt-1" id="dashGastos">$0</div>
+              <p class="text-[11px] text-slate-500 mt-1" id="dashGastosSub"></p>
+            </div>
+            <div class="bg-white p-5 rounded-xl shadow-sm border-2 border-emerald-200">
+              <span class="text-[11px] font-bold uppercase text-slate-400"><i class="fa-solid fa-sack-dollar text-emerald-600"></i> Te quedó (utilidad)</span>
+              <div class="text-3xl font-bold text-emerald-600 mt-1" id="dashUtilidad">$0</div>
+              <p class="text-[11px] text-slate-500 mt-1" id="dashUtilidadSub"></p>
+            </div>
+          </div>
+
+          <!-- VISTA: MEDIOS DE PAGO -->
+          <div id="vista-medios" class="vista-dash hidden bg-white p-5 rounded-xl shadow-sm border border-slate-200">
+            <h3 class="text-sm font-bold text-slate-700 mb-1">Cuadre de caja</h3>
+            <p class="text-[11px] text-slate-500 mb-3">Cuánta plata debe haber en cada medio. Usa <b>Hoy</b> para el cierre del día.</p>
+            <div class="overflow-x-auto">
+              <table class="w-full text-left text-xs">
+                <thead class="bg-slate-50 border-b uppercase text-slate-500">
+                  <tr><th class="p-2.5">Método</th><th class="p-2.5 text-right">Entró</th><th class="p-2.5 text-right">Salió</th><th class="p-2.5 text-right">Debe haber</th></tr>
+                </thead>
+                <tbody id="tablaCuadre" class="divide-y divide-slate-100"></tbody>
+              </table>
+            </div>
+          </div>
+
+          <!-- VISTA: GANANCIAS -->
+          <div id="vista-ganancias" class="vista-dash hidden grid grid-cols-1 lg:grid-cols-2 gap-4">
+            <div class="bg-white p-5 rounded-xl shadow-sm border border-slate-200">
+              <h3 class="text-sm font-bold text-slate-700 mb-3">¿De dónde sale la utilidad?</h3>
+              <div id="listaGanancias" class="text-sm divide-y divide-slate-100"></div>
+            </div>
+            <div class="bg-white p-5 rounded-xl shadow-sm border border-slate-200">
+              <h3 class="text-sm font-bold text-slate-700 mb-3">Gráfico</h3>
+              <div class="h-60"><canvas id="graficoDashboard"></canvas></div>
+            </div>
+          </div>
+
+          <!-- VISTA: INVENTARIO -->
+          <div id="vista-inventario" class="vista-dash hidden space-y-4">
+            <div class="grid grid-cols-1 sm:grid-cols-3 gap-4">
+              <div class="bg-white p-5 rounded-xl shadow-sm border border-slate-200">
+                <span class="text-[11px] font-bold uppercase text-slate-400">Invertido en inventario</span>
+                <div class="text-2xl font-bold text-slate-800 mt-1" id="dashInvCosto">$0</div>
+                <p class="text-[11px] text-slate-500 mt-1">Lo que costó lo que tienes guardado</p>
+              </div>
+              <div class="bg-white p-5 rounded-xl shadow-sm border border-slate-200">
+                <span class="text-[11px] font-bold uppercase text-slate-400">Si vendes todo</span>
+                <div class="text-2xl font-bold text-emerald-600 mt-1" id="dashInvVenta">$0</div>
+                <p class="text-[11px] text-slate-500 mt-1">A precio de venta</p>
+              </div>
+              <div class="bg-white p-5 rounded-xl shadow-sm border border-slate-200">
+                <span class="text-[11px] font-bold uppercase text-slate-400">Unidades en bodega</span>
+                <div class="text-2xl font-bold text-slate-800 mt-1" id="dashInvUnidades">0</div>
+                <p class="text-[11px] text-slate-500 mt-1" id="dashInvProductos"></p>
+              </div>
+            </div>
+            <div class="grid grid-cols-1 lg:grid-cols-2 gap-4">
+              <div class="bg-white p-5 rounded-xl shadow-sm border border-slate-200">
+                <h3 class="text-sm font-bold text-slate-700 mb-3">⚠️ Por agotarse (3 o menos)</h3>
+                <div id="listaStockBajo" class="text-xs divide-y divide-slate-100"></div>
+              </div>
+              <div class="bg-white p-5 rounded-xl shadow-sm border border-slate-200">
+                <h3 class="text-sm font-bold text-slate-700 mb-3">🏆 Más vendidos del periodo</h3>
+                <div id="listaMasVendidos" class="text-xs divide-y divide-slate-100"></div>
+              </div>
+            </div>
+          </div>
         </div>
       </section>
 
@@ -207,8 +249,9 @@
         <div class="bg-white p-6 rounded-xl shadow-sm border border-slate-200 space-y-3">
           <h2 class="text-base font-bold text-slate-800 flex items-center gap-2"><i class="fa-solid fa-cart-shopping text-emerald-600"></i> Registrar Venta</h2>
           <div>
-            <label class="block text-xs font-semibold text-slate-600 mb-1">Categoría</label>
-            <select id="ventaCat" onchange="cambiarCategoriaVenta()" class="w-full p-2.5 border rounded-lg bg-slate-50 text-sm">
+            <label class="block text-xs font-semibold text-slate-600 mb-1">Ver productos de</label>
+            <select id="ventaCat" onchange="actualizarBuscadorVenta()" class="w-full p-2.5 border rounded-lg bg-slate-50 text-sm">
+              <option value="Todas">Todas las categorías</option>
               <option value="Navidad">Navidad</option>
               <option value="Origen Lumbre">Comercial / Origen Lumbre</option>
             </select>
@@ -403,7 +446,7 @@
     <div id="modalPostal" class="fixed inset-0 bg-slate-900/85 backdrop-blur-md hidden flex justify-center items-center p-4 z-50 overflow-y-auto">
       <div class="flex flex-col items-center max-w-md w-full space-y-4 my-auto">
         <div id="postalRenderArea" class="postal-bg-container rounded-2xl shadow-2xl relative text-center text-[#21110b] flex flex-col justify-between overflow-hidden p-6">
-                   <div class="pt-8 flex flex-col items-center">
+          <div class="pt-8 flex flex-col items-center">
             <!-- Estrella dorada -->
             <span class="text-[#c5a059] text-lg leading-none mb-1">★</span>
 
@@ -552,7 +595,6 @@
     let configCargada = false;
     let enLinea = false;
     let carrito = [];
-    let catVentaActual = 'Navidad';
     let lumbreDesbloqueado = false;
     let ultimaVentaRegistrada = null;
     let miGrafico = null;
@@ -866,7 +908,7 @@
     }
 
     // ---------------------------------------------------------
-    // 7. VENTAS CON CARRITO
+    // 7. VENTAS CON CARRITO (se pueden mezclar categorías)
     // ---------------------------------------------------------
     // Unidades que quedan libres (stock menos lo que ya está en el carrito)
     function disponible(prodKey) {
@@ -876,20 +918,6 @@
       return (Number(p.stock) || 0) - enCarrito;
     }
 
-    function cambiarCategoriaVenta() {
-      const nueva = $('ventaCat').value;
-      if (carrito.length && nueva !== catVentaActual) {
-        if (!confirm('El carrito tiene productos de otra categoría. ¿Vaciarlo para cambiar?')) {
-          $('ventaCat').value = catVentaActual;
-          return;
-        }
-        carrito = [];
-        renderizarCarrito();
-      }
-      catVentaActual = nueva;
-      actualizarBuscadorVenta();
-    }
-
     function actualizarBuscadorVenta() {
       const cat = $('ventaCat').value;
       const texto = ($('ventaBusqueda').value || '').toLowerCase();
@@ -897,11 +925,12 @@
       const previo = select.value;
 
       const opciones = productos()
-        .filter(p => p.categoria === cat && String(p.nombre).toLowerCase().includes(texto))
+        .filter(p => (cat === 'Todas' || p.categoria === cat) && String(p.nombre).toLowerCase().includes(texto))
         .sort((a, b) => String(a.nombre).localeCompare(String(b.nombre)))
         .map(p => {
           const disp = disponible(p._key);
-          return `<option value="${p._key}" ${disp <= 0 ? 'disabled' : ''}>${esc(p.nombre)} (Disp: ${disp}) - ${dinero(p.precio)}</option>`;
+          const etiqueta = cat === 'Todas' ? ` · ${p.categoria}` : '';
+          return `<option value="${p._key}" ${disp <= 0 ? 'disabled' : ''}>${esc(p.nombre)}${esc(etiqueta)} (Disp: ${disp}) - ${dinero(p.precio)}</option>`;
         }).join('');
 
       select.innerHTML = '<option value="">-- Seleccionar producto --</option>' + opciones;
@@ -931,7 +960,7 @@
       if (existente) {
         existente.cantidad += cantidad;
       } else {
-        carrito.push({ prodKey, nombre: p.nombre, precio, costo: Number(p.costo) || 0, cantidad });
+        carrito.push({ prodKey, nombre: p.nombre, categoria: p.categoria, precio, costo: Number(p.costo) || 0, cantidad });
       }
 
       $('ventaCantidad').value = 1;
@@ -950,12 +979,15 @@
     function renderizarCarrito() {
       const total = suma(carrito, i => i.precio * i.cantidad);
       const unidades = suma(carrito, i => i.cantidad);
+      const colorCat = c => c === 'Navidad' ? 'bg-rose-50 text-rose-700' : 'bg-amber-50 text-amber-700';
 
       $('listaCarrito').innerHTML = carrito.map((i, idx) => `
         <div class="flex justify-between items-center py-2 gap-2">
           <div class="min-w-0">
             <div class="font-semibold text-slate-800 truncate">${esc(i.nombre)}</div>
-            <div class="text-slate-500">${i.cantidad} × ${dinero(i.precio)}</div>
+            <div class="text-slate-500">${i.cantidad} × ${dinero(i.precio)}
+              <span class="ml-1 px-1.5 py-0.5 rounded text-[10px] font-semibold ${colorCat(i.categoria)}">${esc(i.categoria)}</span>
+            </div>
           </div>
           <div class="flex items-center gap-3 shrink-0">
             <span class="font-bold text-slate-800">${dinero(i.precio * i.cantidad)}</span>
@@ -990,32 +1022,42 @@
           aplicados.push(it);
         }
 
-        // 2) Guardar la venta como un registro independiente
+        // 2) Guardar la venta. Si mezcla categorías, se guarda una parte por
+        //    categoría para que cada proyecto lleve sus propias cuentas.
         const metodoPago = $('ventaMetodoPago').value;
         const cliente    = $('ventaCliente').value.trim() || 'Cliente General';
-        const categoria  = catVentaActual;
-        const items = carrito.map(i => ({ ...i }));
+        const grupo      = Date.now();
+        const porCategoria = {};
+        carrito.forEach(i => { (porCategoria[i.categoria] = porCategoria[i.categoria] || []).push({ ...i }); });
 
-        const mov = {
-          id: Date.now(),
-          fecha: fechaHoy(),
-          tipo: 'Venta',
-          metodoPago,
-          categoria,
-          cliente,
-          items,
-          descripcion: `${items.map(i => `${i.nombre} (x${i.cantidad})`).join(', ')} [${metodoPago}] - Cliente: ${cliente}`,
-          monto: suma(items, i => i.precio * i.cantidad),
-          costoTotal: suma(items, i => i.costo * i.cantidad)
-        };
+        const upd = {};
+        let totalVenta = 0;
+        Object.entries(porCategoria).forEach(([categoria, items], n) => {
+          const monto = suma(items, i => i.precio * i.cantidad);
+          totalVenta += monto;
+          upd[refRaiz.child('movimientos').push().key] = {
+            id: grupo + n,
+            grupo,
+            fecha: fechaHoy(),
+            tipo: 'Venta',
+            metodoPago,
+            categoria,
+            cliente,
+            items,
+            descripcion: `${items.map(i => `${i.nombre} (x${i.cantidad})`).join(', ')} [${metodoPago}] - Cliente: ${cliente}`,
+            monto,
+            costoTotal: suma(items, i => i.costo * i.cantidad)
+          };
+        });
 
-        await refRaiz.child('movimientos').push(mov);
-        ultimaVentaRegistrada = mov;
+        await refRaiz.child('movimientos').update(upd);
+        ultimaVentaRegistrada = { cliente, fecha: fechaHoy() };
 
+        const hayNavidad = !!porCategoria['Navidad'];
         carrito = [];
         $('ventaCliente').value = '';
-        $('contenedorBotonPostal').classList.toggle('hidden', categoria !== 'Navidad');
-        alert(`¡Venta registrada! Total: ${dinero(mov.monto)}`);
+        $('contenedorBotonPostal').classList.toggle('hidden', !hayNavidad);
+        alert(`¡Venta registrada! Total: ${dinero(totalVenta)}`);
       } catch (err) {
         for (const a of aplicados) { try { await cambiarStock(a.prodKey, a.cantidad); } catch {} }
         avisarError(err);
@@ -1240,106 +1282,160 @@
     }
 
     // ---------------------------------------------------------
-    // 11. DASHBOARD Y CUADRE DE CAJA
+    // 11. DASHBOARD (resumen + vistas)
     // ---------------------------------------------------------
-    const ID_TARJETAS = ['dashVentasFiltradas', 'dashVentasMes', 'dashVentasCosto', 'dashGananciaBruta',
-                         'dashTotalInvertido', 'dashTotalGastosCaja', 'dashUtilidadLimpia'];
+    let periodoDash = 'todo';
+    let vistaDash = 'resumen';
+
+    // Devuelve [desde, hasta] según el periodo elegido ('' = sin límite)
+    function rangoPeriodo() {
+      const hoy = fechaHoy();
+      if (periodoDash === 'hoy') return [hoy, hoy];
+      if (periodoDash === 'semana') {
+        const d = new Date();
+        d.setDate(d.getDate() - ((d.getDay() + 6) % 7)); // lunes
+        const pad = n => String(n).padStart(2, '0');
+        return [`${d.getFullYear()}-${pad(d.getMonth() + 1)}-${pad(d.getDate())}`, hoy];
+      }
+      if (periodoDash === 'mes') return [hoy.substring(0, 7) + '-01', hoy];
+      if (periodoDash === 'rango') return [$('dashFiltroDesde').value, $('dashFiltroHasta').value];
+      return ['', ''];
+    }
+
+    function textoRango(desde, hasta) {
+      const nombres = { hoy: 'Hoy', semana: 'Esta semana', mes: 'Este mes', todo: 'Todo el historial' };
+      if (periodoDash !== 'rango') return nombres[periodoDash];
+      if (!desde && !hasta) return 'Elige las fechas';
+      return `Del ${desde || 'inicio'} al ${hasta || 'hoy'}`;
+    }
+
+    function elegirPeriodo(p) {
+      periodoDash = p;
+      document.querySelectorAll('.chip-periodo').forEach(b => b.classList.toggle('activo', b.dataset.periodo === p));
+      $('rangoPersonalizado').classList.toggle('hidden', p !== 'rango');
+      renderizarDashboard();
+    }
+
+    function elegirVista(v) {
+      vistaDash = v;
+      document.querySelectorAll('.vista-btn').forEach(b => b.classList.toggle('activo', b.dataset.vista === v));
+      document.querySelectorAll('.vista-dash').forEach(d => d.classList.toggle('hidden', d.id !== 'vista-' + v));
+      renderizarDashboard();
+    }
 
     function renderizarDashboard() {
-      const filtroCat    = $('dashFiltro').value;
-      const filtroMetodo = $('dashFiltroMetodo').value;
-      const desde        = $('dashFiltroDesde').value;
-      const hasta        = $('dashFiltroHasta').value;
-
-      if (filtroCat === 'Origen Lumbre' && !lumbreDesbloqueado) {
-        ID_TARJETAS.forEach(id => $(id).textContent = '🔒');
-        $('cuadreRango').textContent = '';
-        $('tablaCuadre').innerHTML = '<tr><td colspan="4" class="p-4 text-center text-slate-400">🔒 Ingresa el PIN para ver Origen Lumbre</td></tr>';
+      const cat = $('dashFiltro').value;
+      const bloqueado = cat === 'Origen Lumbre' && !lumbreDesbloqueado;
+      $('dashBloqueado').classList.toggle('hidden', !bloqueado);
+      $('dashContenido').classList.toggle('hidden', bloqueado);
+      if (bloqueado) {
+        $('dashRango').textContent = '';
         if (miGrafico) { miGrafico.destroy(); miGrafico = null; }
         return;
       }
 
-      const enRango   = x => (!desde || x.fecha >= desde) && (!hasta || x.fecha <= hasta);
-      const deMetodo  = x => filtroMetodo === 'Todos' || normalizarMetodo(x.metodoPago) === filtroMetodo;
+      const [desde, hasta] = rangoPeriodo();
+      const enRango = x => (!desde || x.fecha >= desde) && (!hasta || x.fecha <= hasta);
+      const movs = movimientos().filter(m => m.categoria === cat && enRango(m));
+      const gas  = gastos().filter(g => g.categoria === cat && enRango(g));
 
-      const movs = movimientos().filter(m => m.categoria === filtroCat && deMetodo(m) && enRango(m));
-      const gas  = gastos().filter(g => g.categoria === filtroCat && deMetodo(g) && enRango(g));
-
-      const mesActual   = fechaHoy().substring(0, 7);
       const ventas      = suma(movs, m => m.monto);
-      const ventasMes   = suma(movs.filter(m => String(m.fecha).startsWith(mesActual)), m => m.monto);
       const costoVentas = suma(movs, m => m.costoTotal);
       const ganancia    = ventas - costoVentas;
       const totalGastos = suma(gas, g => g.monto);
       const utilidad    = ganancia - totalGastos;
-      const inventario  = suma(productos().filter(p => p.categoria === filtroCat), p => p.costo * p.stock);
+      const nVentas     = new Set(movs.map(m => m.grupo || m.id)).size;
 
-      $('dashVentasFiltradas').textContent = dinero(ventas);
-      $('dashVentasMes').textContent       = dinero(ventasMes);
-      $('dashVentasCosto').textContent     = dinero(costoVentas);
-      $('dashGananciaBruta').textContent   = dinero(ganancia);
-      $('dashTotalInvertido').textContent  = dinero(inventario);
-      $('dashTotalGastosCaja').textContent = dinero(totalGastos);
-      $('dashUtilidadLimpia').textContent  = dinero(utilidad);
-      $('dashUtilidadLimpia').className    = `text-2xl font-bold mt-1 ${utilidad < 0 ? 'text-rose-600' : 'text-emerald-600'}`;
+      $('dashRango').textContent = `${textoRango(desde, hasta)} · ${cat}`;
 
-      renderizarCuadre(filtroCat, enRango, desde, hasta);
-      renderizarGrafico([ventas, costoVentas, totalGastos, utilidad]);
+      // --- Resumen ---
+      $('dashVentas').textContent = dinero(ventas);
+      $('dashVentasSub').textContent = nVentas
+        ? `${nVentas} ${nVentas === 1 ? 'venta' : 'ventas'} · promedio ${dinero(ventas / nVentas)}`
+        : 'Sin ventas en este periodo';
+      $('dashGastos').textContent = dinero(totalGastos);
+      $('dashGastosSub').textContent = gas.length ? `${gas.length} ${gas.length === 1 ? 'gasto' : 'gastos'} registrados` : 'Sin gastos en este periodo';
+      $('dashUtilidad').textContent = dinero(utilidad);
+      $('dashUtilidad').className = `text-3xl font-bold mt-1 ${utilidad < 0 ? 'text-rose-600' : 'text-emerald-600'}`;
+      $('dashUtilidadSub').textContent = ventas
+        ? `${Math.round(utilidad / ventas * 100)}% de lo vendido`
+        : 'Vendido − costo de productos − gastos';
+
+      // --- Vistas de detalle (solo se calcula la que está abierta) ---
+      if (vistaDash === 'medios')     renderizarCuadre(movs, gas);
+      if (vistaDash === 'ganancias')  renderizarGanancias(ventas, costoVentas, ganancia, totalGastos, utilidad);
+      if (vistaDash === 'inventario') renderizarInventarioDash(cat, movs);
+      if (vistaDash !== 'ganancias' && miGrafico) { miGrafico.destroy(); miGrafico = null; }
     }
 
     // Cuánta plata debe haber en cada medio de pago
-    function renderizarCuadre(cat, enRango, desde, hasta) {
-      const movs = movimientos().filter(m => m.categoria === cat && enRango(m));
-      const gas  = gastos().filter(g => g.categoria === cat && enRango(g));
-
+    function renderizarCuadre(movs, gas) {
       const filas = METODOS.map(metodo => {
         const entro = suma(movs.filter(m => normalizarMetodo(m.metodoPago) === metodo), m => m.monto);
         const salio = suma(gas.filter(g => normalizarMetodo(g.metodoPago) === metodo), g => g.monto);
         return { metodo, entro, salio, neto: entro - salio };
       });
-
-      const total = {
-        entro: suma(filas, f => f.entro),
-        salio: suma(filas, f => f.salio),
-        neto:  suma(filas, f => f.neto)
-      };
+      const total = { entro: suma(filas, f => f.entro), salio: suma(filas, f => f.salio), neto: suma(filas, f => f.neto) };
 
       const iconos = { Efectivo: '💵', Nequi: '🟣', Bancolombia: '🟡', Daviplata: '🔴' };
       const colorNeto = n => n < 0 ? 'text-rose-600' : 'text-slate-800';
+      const salida = v => v ? '-' + dinero(v) : dinero(0);
 
       $('tablaCuadre').innerHTML = filas.map(f => `
         <tr>
-          <td class="p-2.5 font-semibold">${iconos[f.metodo]} ${f.metodo}</td>
+          <td class="p-2.5 font-semibold whitespace-nowrap">${iconos[f.metodo]} ${f.metodo}</td>
           <td class="p-2.5 text-right text-emerald-600">${dinero(f.entro)}</td>
-          <td class="p-2.5 text-right text-rose-600">${f.salio ? '-' + dinero(f.salio) : dinero(0)}</td>
+          <td class="p-2.5 text-right text-rose-600">${salida(f.salio)}</td>
           <td class="p-2.5 text-right font-bold ${colorNeto(f.neto)}">${dinero(f.neto)}</td>
         </tr>`).join('') + `
         <tr class="bg-slate-50 font-bold">
           <td class="p-2.5">TOTAL</td>
           <td class="p-2.5 text-right text-emerald-700">${dinero(total.entro)}</td>
-          <td class="p-2.5 text-right text-rose-700">${total.salio ? '-' + dinero(total.salio) : dinero(0)}</td>
+          <td class="p-2.5 text-right text-rose-700">${salida(total.salio)}</td>
           <td class="p-2.5 text-right ${colorNeto(total.neto)}">${dinero(total.neto)}</td>
         </tr>`;
-
-      let rango;
-      if (desde && hasta && desde === hasta) rango = desde === fechaHoy() ? 'Hoy' : `El ${desde}`;
-      else if (desde || hasta) rango = `Del ${desde || 'inicio'} al ${hasta || 'hoy'}`;
-      else rango = 'Todo el historial';
-      $('cuadreRango').textContent = `${rango} · ${cat}. Toca "Hoy" para hacer el cierre del día.`;
     }
 
-    function verHoy() {
-      const hoy = fechaHoy();
-      $('dashFiltroDesde').value = hoy;
-      $('dashFiltroHasta').value = hoy;
-      renderizarDashboard();
+    function renderizarGanancias(ventas, costo, ganancia, gastosT, utilidad) {
+      const fila = (texto, valor, clase, ayuda) => `
+        <div class="flex justify-between items-center py-2.5 gap-2">
+          <div><div class="${clase}">${texto}</div>${ayuda ? `<div class="text-[11px] text-slate-400">${ayuda}</div>` : ''}</div>
+          <div class="${clase} whitespace-nowrap">${valor}</div>
+        </div>`;
+      const margen = ventas ? ` (${Math.round(ganancia / ventas * 100)}%)` : '';
+
+      $('listaGanancias').innerHTML =
+        fila('Vendido', dinero(ventas), 'font-semibold text-slate-800') +
+        fila('− Costo de los productos', '-' + dinero(costo), 'text-amber-600', 'Lo que te costaron los productos vendidos') +
+        fila('= Ganancia bruta' + margen, dinero(ganancia), 'font-semibold text-blue-600') +
+        fila('− Gastos', '-' + dinero(gastosT), 'text-rose-600', 'Bolsas, transporte, empaques...') +
+        fila('= Te quedó', dinero(utilidad), `font-bold text-base ${utilidad < 0 ? 'text-rose-600' : 'text-emerald-600'}`);
+
+      renderizarGrafico([ventas, costo, gastosT, utilidad]);
     }
 
-    function limpiarFiltrosDashboard() {
-      $('dashFiltroMetodo').value = 'Todos';
-      $('dashFiltroDesde').value = '';
-      $('dashFiltroHasta').value = '';
-      renderizarDashboard();
+    function renderizarInventarioDash(cat, movs) {
+      const prods = productos().filter(p => p.categoria === cat);
+      $('dashInvCosto').textContent = dinero(suma(prods, p => p.costo * p.stock));
+      $('dashInvVenta').textContent = dinero(suma(prods, p => p.precio * p.stock));
+      $('dashInvUnidades').textContent = suma(prods, p => p.stock).toLocaleString('es-CO');
+      $('dashInvProductos').textContent = `${prods.length} ${prods.length === 1 ? 'producto' : 'productos'}`;
+
+      const bajos = prods.filter(p => Number(p.stock) <= 3).sort((a, b) => a.stock - b.stock);
+      $('listaStockBajo').innerHTML = bajos.map(p => `
+        <div class="flex justify-between py-2">
+          <span class="text-slate-700">${esc(p.nombre)}</span>
+          <span class="font-bold ${Number(p.stock) === 0 ? 'text-rose-600' : 'text-amber-600'}">${Number(p.stock) === 0 ? 'Agotado' : p.stock + ' und'}</span>
+        </div>`).join('') || '<p class="text-slate-400 py-2">Todo tiene buen stock 👌</p>';
+
+      const conteo = {};
+      movs.forEach(m => itemsDeVenta(m).forEach(i => { conteo[i.nombre] = (conteo[i.nombre] || 0) + (Number(i.cantidad) || 0); }));
+      const top = Object.entries(conteo).sort((a, b) => b[1] - a[1]).slice(0, 5);
+      $('listaMasVendidos').innerHTML = top.map(([nombre, und], i) => `
+        <div class="flex justify-between py-2">
+          <span class="text-slate-700">${i + 1}. ${esc(nombre)}</span>
+          <span class="font-bold text-slate-800">${und} und</span>
+        </div>`).join('') || '<p class="text-slate-400 py-2">Aún no hay ventas en este periodo</p>';
     }
 
     function renderizarGrafico(valores) {
@@ -1348,7 +1444,7 @@
       miGrafico = new Chart($('graficoDashboard').getContext('2d'), {
         type: 'bar',
         data: {
-          labels: ['Ventas Totales', 'Costo de Ventas', 'Gastos Caja', 'Utilidad Real'],
+          labels: ['Vendido', 'Costo productos', 'Gastos', 'Te quedó'],
           datasets: [{ label: 'Monto ($)', data: valores, backgroundColor: ['#10b981', '#f59e0b', '#f43f5e', '#3b82f6'] }]
         },
         options: {
