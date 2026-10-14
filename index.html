@@ -40,21 +40,12 @@
     .chip-periodo.activo { background: #fff; color: #047857; box-shadow: 0 1px 2px rgba(0,0,0,.08); }
     .vista-btn { background: #fff; color: #475569; border-color: #e2e8f0; }
     .vista-btn.activo { background: #0f172a; color: #fff; border-color: #0f172a; }
-        /* Frase que va pasando sin parar */
-    .marquesina {
-      overflow: hidden;
-      white-space: nowrap;
-      -webkit-mask-image: linear-gradient(90deg, transparent, #000 10%, #000 90%, transparent);
-              mask-image: linear-gradient(90deg, transparent, #000 10%, #000 90%, transparent);
+         /* Nota de amor */
+    #modalNota .tarjeta-nota { animation: aparecerNota .35s ease-out; }
+    @keyframes aparecerNota {
+      from { opacity: 0; transform: translateY(12px) scale(.97); }
+      to   { opacity: 1; transform: none; }
     }
-    .marquesina .cinta {
-      display: inline-flex;
-      animation: pasarFrase 20s linear infinite;
-    }
-    .marquesina .cinta span {
-      padding-right: 3rem;
-    }
-    @keyframes pasarFrase {
       from { transform: translateX(0); }
       to   { transform: translateX(-50%); }
     }
@@ -106,13 +97,12 @@
             </p>
           </div>
         </div>
-                <!-- Frase que va pasando sin parar -->
-<div class="marquesina flex-1 min-w-0 mx-3 text-xs font-semibold text-white">
-          <div class="cinta">
-            <span>❤️ Amor, lo vamos a lograr con la ayuda de Dios 🙏</span>
-            <span>❤️ Amor, lo vamos a lograr con la ayuda de Dios 🙏</span>
-            <span>❤️ Amor, lo vamos a lograr con la ayuda de Dios 🙏</span>
-            <span>❤️ Amor, lo vamos a lograr con la ayuda de Dios 🙏</span>
+                   <!-- Biblia con la nota -->
+        <div class="flex-1 flex justify-center">
+          <button onclick="abrirModal('modalNota')" title="Nuestra nota" class="text-amber-300 hover:text-amber-200 text-2xl hover:scale-110 transition-transform">
+            <i class="fa-solid fa-book-bible"></i>
+          </button>
+        </div>
           </div>
         </div>
         <div class="flex items-center gap-2">
@@ -532,7 +522,23 @@
         </div>
       </div>
     </div>
-
+    <!-- Nota de amor -->
+    <div id="modalNota" onclick="if(event.target === this) cerrarModal('modalNota')" class="fixed inset-0 bg-slate-900/70 backdrop-blur-sm hidden flex justify-center items-center p-4 z-50">
+      <div class="tarjeta-nota bg-[#fdf8f0] rounded-2xl shadow-2xl max-w-sm w-full p-7 text-center space-y-4 border border-[#e8d9c0]">
+        <div class="text-3xl text-[#6d181c]"><i class="fa-solid fa-book-bible"></i></div>
+        <h3 class="font-script text-5xl text-[#6d181c] leading-none">Para nosotros</h3>
+        <div class="font-body-carmel text-[15px] leading-relaxed text-[#3b2a20] space-y-3">
+          <p><b>Amor, lo vamos a lograr con la ayuda de Dios.</b> ❤️</p>
+          <p>Que nuestros sueños se hagan realidad y nunca olvidemos que, caminando juntos con fe, Él guía nuestros pasos. 🙏🏼</p>
+        </div>
+        <div class="flex items-center justify-center gap-2 text-[#c5a059]">
+          <div class="h-[1px] w-10 bg-[#c5a059]/60"></div><span class="text-xs">★</span><div class="h-[1px] w-10 bg-[#c5a059]/60"></div>
+        </div>
+        <p class="font-body-carmel italic text-sm text-[#6d181c]">“Encomienda a Jehová tu camino, y confía en él.”</p>
+        <p class="text-[11px] uppercase tracking-widest text-[#785928] font-bold">Salmos 37:5 🤍</p>
+        <button onclick="cerrarModal('modalNota')" class="mt-2 bg-[#6d181c] hover:bg-[#5a1317] text-white font-bold px-6 py-2.5 rounded-full text-sm transition">Amén 🙏</button>
+      </div>
+    </div>
     <!-- Carga masiva -->
     <div id="modalPlano" class="fixed inset-0 bg-slate-900/50 backdrop-blur-sm hidden flex justify-center items-center p-4 z-50">
       <div class="bg-white rounded-xl p-5 max-w-md w-full space-y-3">
