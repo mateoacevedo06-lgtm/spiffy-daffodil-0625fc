@@ -3,44 +3,68 @@
 <head>
   <meta charset="UTF-8">
   <meta name="viewport" content="width=device-width, initial-scale=1.0">
-  <title>Control Financiero</title>
+  <title>Control Financiero - Mate y Lau</title>
   <link rel="manifest" href="manifest.json">
   <meta name="theme-color" content="#0f172a">
+  
+  <!-- Tailwind CSS & FontAwesome -->
   <script src="https://cdn.tailwindcss.com"></script>
   <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
   <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
+  
+  <!-- Tipografías para la Postal Navideña -->
+  <link rel="preconnect" href="https://fonts.googleapis.com">
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+  <link href="https://fonts.googleapis.com/css2?family=Alex+Brush&family=Cinzel:wght@600;700&family=Lora:ital,wght@0,400;0,600;1,400&display=swap" rel="stylesheet">
+
+  <!-- Librerías para exportar PNG y PDF de alta calidad -->
+  <script src="https://cdnjs.cloudflare.com/ajax/libs/html2canvas/1.4.1/html2canvas.min.js"></script>
+  <script src="https://cdnjs.cloudflare.com/ajax/libs/jspdf/2.5.1/jspdf.umd.min.js"></script>
+
   <style>
     .tab-btn.active {
       border-bottom: 3px solid #10b981;
       color: #10b981;
       font-weight: bold;
     }
+    .font-script { font-family: 'Alex Brush', cursive; }
+    .font-serif-title { font-family: 'Cinzel', serif; }
+    .font-body-carmel { font-family: 'Lora', serif; }
+
+    /* Estilo del lienzo con la imagen fotográfica real de fondo */
+    .postal-bg-container {
+      background-image: url('fondo-postal.jpg');
+      background-size: cover;
+      background-position: center;
+      width: 420px;
+      height: 640px;
+    }
   </style>
 </head>
 <body class="bg-slate-100 text-slate-800 font-sans min-h-screen">
 
-  <!-- LOGIN GENERAL -->
+  <!-- PANTALLA DE LOGIN -->
   <div id="loginSection" class="fixed inset-0 bg-slate-900 flex justify-center items-center p-4 z-50">
     <div class="bg-white rounded-2xl shadow-2xl p-8 max-w-sm w-full space-y-6 text-center">
       <div class="inline-flex items-center justify-center w-16 h-16 bg-emerald-100 text-emerald-600 rounded-full text-3xl mb-2">
-        <i class="fa-solid fa-wallet"></i>
+        <i class="fa-solid fa-chart-pie"></i>
       </div>
       <div>
-        <h2 class="text-2xl font-bold text-slate-800">Sistema Financiero</h2>
-        <p class="text-xs text-slate-500 mt-1">Navidad & Origen Lumbre</p>
+        <h2 class="text-2xl font-bold text-slate-800">Control Financiero</h2>
+        <p class="text-xs text-slate-500 mt-1">Mate y Lau</p>
       </div>
       <form onsubmit="validarLogin(event)" class="space-y-4 text-left">
         <div>
           <label class="block text-xs font-semibold text-slate-600 mb-1">Usuario</label>
-          <input type="text" id="loginUser" class="w-full p-3 border rounded-lg text-sm outline-none focus:ring-2 focus:ring-emerald-500" placeholder="Usuario" required>
+          <input type="text" id="loginUser" class="w-full p-3 border rounded-lg text-sm outline-none focus:ring-2 focus:ring-emerald-500" required>
         </div>
         <div>
           <label class="block text-xs font-semibold text-slate-600 mb-1">Contraseña</label>
-          <input type="password" id="loginPass" class="w-full p-3 border rounded-lg text-sm outline-none focus:ring-2 focus:ring-emerald-500" placeholder="••••••••" required>
+          <input type="password" id="loginPass" class="w-full p-3 border rounded-lg text-sm outline-none focus:ring-2 focus:ring-emerald-500" required>
         </div>
         <p id="loginError" class="text-xs text-rose-500 font-semibold hidden text-center">Credenciales incorrectas</p>
         <button type="submit" class="w-full bg-slate-900 hover:bg-slate-800 text-white font-bold py-3 rounded-lg shadow-lg transition">
-          Ingresar al Sistema
+          Ingresar
         </button>
       </form>
     </div>
@@ -55,150 +79,122 @@
           <i class="fa-solid fa-chart-pie text-emerald-400 text-2xl"></i>
           <div>
             <h1 class="text-base font-bold leading-tight">Control Financiero</h1>
-            <p class="text-[10px] text-slate-400">Navidad | Origen Lumbre | Personales</p>
+            <p class="text-[11px] text-emerald-400 font-medium">Mate y Lau</p>
           </div>
         </div>
-        <div class="flex items-center gap-2">
-          <button id="btnEstadoLumbre" onclick="toggleAccesoLumbre()" class="text-xs px-2.5 py-1 rounded-full bg-slate-800 text-slate-300 border border-slate-700 hover:bg-slate-700 transition">
-            <i class="fa-solid fa-lock text-amber-400"></i> Lumbre: Bloqueado
+        <div class="flex items-center gap-3">
+          <button onclick="cambiarPestana('ventas')" class="bg-emerald-600 hover:bg-emerald-700 text-white px-3 py-1.5 rounded-lg text-xs font-bold shadow flex items-center gap-1.5 transition">
+            <i class="fa-solid fa-plus"></i> + Registrar Venta
           </button>
-          <button onclick="cerrarSesion()" class="bg-rose-600 hover:bg-rose-700 px-3 py-1.5 rounded text-xs font-semibold transition">
+          <button onclick="cerrarSesion()" class="bg-slate-800 hover:bg-rose-600 text-slate-300 hover:text-white px-2.5 py-1.5 rounded text-xs transition">
             <i class="fa-solid fa-right-from-bracket"></i>
           </button>
         </div>
       </div>
     </header>
 
-    <!-- Navegación por pestañas -->
+    <!-- Menú Horizontal de Pestañas -->
     <nav class="bg-white border-b border-slate-200 sticky top-[60px] z-30 shadow-sm overflow-x-auto">
       <div class="max-w-7xl mx-auto flex text-sm">
-        <button onclick="cambiarPestana('dash-navidad')" id="tab-dash-navidad" class="tab-btn active px-4 py-3 whitespace-nowrap flex items-center gap-2 text-rose-600">
-          <i class="fa-solid fa-gifts"></i> Dashboard Navidad
+        <button onclick="cambiarPestana('dashboard')" id="tab-dashboard" class="tab-btn active px-5 py-3 whitespace-nowrap flex items-center gap-2">
+          <i class="fa-solid fa-chart-line"></i> Dashboard
         </button>
-
-        <button onclick="intentarAccesoLumbre('dash-lumbre')" id="tab-dash-lumbre" class="tab-btn px-4 py-3 whitespace-nowrap flex items-center gap-2 text-amber-600">
-          <i class="fa-solid fa-fire"></i> Dashboard Lumbre (Privado)
+        <button onclick="cambiarPestana('ventas')" id="tab-ventas" class="tab-btn px-5 py-3 whitespace-nowrap flex items-center gap-2">
+          <i class="fa-solid fa-cart-plus"></i> Registrar Venta
         </button>
-
-        <button onclick="cambiarPestana('ventas')" id="tab-ventas" class="tab-btn px-4 py-3 whitespace-nowrap flex items-center gap-2">
-          <i class="fa-solid fa-cart-shopping"></i> Registrar Venta
+        <button onclick="cambiarPestana('gastos-caja')" id="tab-gastos-caja" class="tab-btn px-5 py-3 whitespace-nowrap flex items-center gap-2">
+          <i class="fa-solid fa-receipt"></i> Caja y Gastos
         </button>
-
-        <button onclick="cambiarPestana('inv-navidad')" id="tab-inv-navidad" class="tab-btn px-4 py-3 whitespace-nowrap flex items-center gap-2">
-          <i class="fa-solid fa-boxes-packing text-rose-600"></i> Inv. Venta Navidad
+        <button onclick="cambiarPestana('inventario')" id="tab-inventario" class="tab-btn px-5 py-3 whitespace-nowrap flex items-center gap-2">
+          <i class="fa-solid fa-boxes-stacked"></i> Inventario
         </button>
-
-        <button onclick="intentarAccesoLumbre('inv-lumbre')" id="tab-inv-lumbre" class="tab-btn px-4 py-3 whitespace-nowrap flex items-center gap-2">
-          <i class="fa-solid fa-box-archive text-amber-600"></i> Inv. Venta Lumbre
-        </button>
-
-        <button onclick="cambiarPestana('inv-herramientas')" id="tab-inv-herramientas" class="tab-btn px-4 py-3 whitespace-nowrap flex items-center gap-2">
-          <i class="fa-solid fa-screwdriver-wrench text-blue-600"></i> Herramientas / Equipos
-        </button>
-
-        <button onclick="cambiarPestana('movimientos')" id="tab-movimientos" class="tab-btn px-4 py-3 whitespace-nowrap flex items-center gap-2">
+        <button onclick="cambiarPestana('historial')" id="tab-historial" class="tab-btn px-5 py-3 whitespace-nowrap flex items-center gap-2">
           <i class="fa-solid fa-list-check"></i> Historial
         </button>
-
-        <button onclick="cambiarPestana('config')" id="tab-config" class="tab-btn px-4 py-3 whitespace-nowrap flex items-center gap-2 text-slate-500">
-          <i class="fa-solid fa-gear"></i> Ajustes / PIN
+        <button onclick="cambiarPestana('config')" id="tab-config" class="tab-btn px-5 py-3 whitespace-nowrap flex items-center gap-2 text-slate-500">
+          <i class="fa-solid fa-gear"></i> Ajustes
         </button>
       </div>
     </nav>
 
     <main class="max-w-7xl mx-auto p-4 space-y-6">
 
-      <!-- 1. DASHBOARD NAVIDAD & PERSONALES (PÚBLICO) -->
-      <section id="sec-dash-navidad" class="space-y-6">
-        <div class="grid grid-cols-1 md:grid-cols-2 gap-4">
-          <div class="bg-white p-5 rounded-xl shadow-sm border border-slate-200">
-            <div class="flex justify-between items-center mb-2">
-              <span class="text-xs font-bold uppercase text-rose-700 bg-rose-50 px-2 py-1 rounded">Proyecto Navidad</span>
-              <i class="fa-solid fa-gifts text-rose-500 text-xl"></i>
-            </div>
-            <div class="text-2xl font-bold" id="dash-navidad-neto">$0</div>
-            <div class="flex justify-between text-xs text-slate-500 mt-3 pt-2 border-t">
-              <span>Ingresos: <strong class="text-emerald-600" id="dash-navidad-ing">$0</strong></span>
-              <span>Gastos: <strong class="text-rose-600" id="dash-navidad-gas">$0</strong></span>
-            </div>
-          </div>
-
-          <div class="bg-white p-5 rounded-xl shadow-sm border border-slate-200">
-            <div class="flex justify-between items-center mb-2">
-              <span class="text-xs font-bold uppercase text-blue-700 bg-blue-50 px-2 py-1 rounded">Gastos Personales</span>
-              <i class="fa-solid fa-motorcycle text-blue-500 text-xl"></i>
-            </div>
-            <div class="text-2xl font-bold text-slate-700" id="dash-personal-gas">$0</div>
-            <p class="text-xs text-slate-400 mt-3 pt-2 border-t">Gastos compartidos, moto y compras varias</p>
-          </div>
+      <!-- 1. DASHBOARD GENERAL -->
+      <section id="sec-dashboard" class="space-y-6">
+        <div class="bg-white p-4 rounded-xl shadow-sm border border-slate-200 flex flex-col sm:flex-row justify-between items-center gap-3">
+          <span class="text-xs font-bold text-slate-600 uppercase">Filtrar Análisis Financiero:</span>
+          <select id="dashFiltro" onchange="cambiarFiltroDashboard()" class="p-2 border rounded-lg text-xs bg-slate-50 font-semibold text-slate-800">
+            <option value="Navidad">Proyecto Navidad</option>
+            <option value="Gastos Personales">Gastos Personales</option>
+            <option value="Origen Lumbre">Comercial / Origen Lumbre (🔒 Requiere PIN)</option>
+          </select>
         </div>
 
-        <div class="bg-white p-5 rounded-xl shadow-sm border border-slate-200">
-          <h3 class="text-sm font-bold text-slate-700 mb-4">Balance General - Navidad</h3>
-          <div class="h-60">
-            <canvas id="graficoNavidad"></canvas>
+        <div class="grid grid-cols-2 md:grid-cols-4 gap-4">
+          <div class="bg-white p-4 rounded-xl shadow-sm border border-slate-200">
+            <span class="text-[11px] font-bold uppercase text-slate-400">Ventas del Día</span>
+            <div class="text-xl font-bold text-slate-800 mt-1" id="dashVentasDia">$0</div>
           </div>
-        </div>
-      </section>
-
-      <!-- 2. DASHBOARD ORIGEN LUMBRE (PRIVADO) -->
-      <section id="sec-dash-lumbre" class="hidden space-y-6">
-        <div class="bg-amber-50 border border-amber-200 p-4 rounded-xl flex items-center justify-between">
-          <div class="flex items-center gap-3">
-            <i class="fa-solid fa-fire-flame-curved text-amber-600 text-2xl"></i>
-            <div>
-              <h3 class="text-sm font-bold text-amber-900">Módulo Privado Origen Lumbre</h3>
-              <p class="text-xs text-amber-700">Acceso exclusivo habilitado mediante PIN</p>
-            </div>
+          <div class="bg-white p-4 rounded-xl shadow-sm border border-slate-200">
+            <span class="text-[11px] font-bold uppercase text-slate-400">Ventas del Mes</span>
+            <div class="text-xl font-bold text-emerald-600 mt-1" id="dashVentasMes">$0</div>
+          </div>
+          <div class="bg-white p-4 rounded-xl shadow-sm border border-slate-200">
+            <span class="text-[11px] font-bold uppercase text-slate-400">Ventas a Costo</span>
+            <div class="text-xl font-bold text-amber-600 mt-1" id="dashVentasCosto">$0</div>
+          </div>
+          <div class="bg-white p-4 rounded-xl shadow-sm border border-slate-200">
+            <span class="text-[11px] font-bold uppercase text-slate-400">Ganancia Neta Bruta</span>
+            <div class="text-xl font-bold text-blue-600 mt-1" id="dashGananciaNeta">$0</div>
           </div>
         </div>
 
         <div class="grid grid-cols-1 md:grid-cols-3 gap-4">
           <div class="bg-white p-5 rounded-xl shadow-sm border border-slate-200">
-            <span class="text-xs font-bold uppercase text-slate-500">Balance Neto</span>
-            <div class="text-2xl font-bold text-amber-600 mt-1" id="dash-lumbre-neto">$0</div>
+            <span class="text-xs font-bold uppercase text-slate-500">Valor Total en Inventario</span>
+            <div class="text-2xl font-bold text-slate-800 mt-1" id="dashTotalInvertido">$0</div>
           </div>
           <div class="bg-white p-5 rounded-xl shadow-sm border border-slate-200">
-            <span class="text-xs font-bold uppercase text-slate-500">Total Ingresos</span>
-            <div class="text-2xl font-bold text-emerald-600 mt-1" id="dash-lumbre-ing">$0</div>
+            <span class="text-xs font-bold uppercase text-slate-500">Gastos Operativos / Caja</span>
+            <div class="text-2xl font-bold text-rose-600 mt-1" id="dashTotalGastosCaja">$0</div>
           </div>
           <div class="bg-white p-5 rounded-xl shadow-sm border border-slate-200">
-            <span class="text-xs font-bold uppercase text-slate-500">Total Gastos</span>
-            <div class="text-2xl font-bold text-rose-600 mt-1" id="dash-lumbre-gas">$0</div>
+            <span class="text-xs font-bold uppercase text-slate-500">Utilidad Real Limpia</span>
+            <div class="text-2xl font-bold text-emerald-600 mt-1" id="dashUtilidadLimpia">$0</div>
           </div>
         </div>
 
         <div class="bg-white p-5 rounded-xl shadow-sm border border-slate-200">
-          <h3 class="text-sm font-bold text-slate-700 mb-4">Desempeño Origen Lumbre</h3>
+          <h3 class="text-sm font-bold text-slate-700 mb-4">Comportamiento Financiero</h3>
           <div class="h-60">
-            <canvas id="graficoLumbre"></canvas>
+            <canvas id="graficoDashboard"></canvas>
           </div>
         </div>
       </section>
 
-      <!-- 3. REGISTRAR VENTA -->
+      <!-- 2. REGISTRAR VENTA -->
       <section id="sec-ventas" class="hidden max-w-lg mx-auto">
         <div class="bg-white p-6 rounded-xl shadow-sm border border-slate-200 space-y-4">
           <h2 class="text-base font-bold text-slate-800 flex items-center gap-2">
-            <i class="fa-solid fa-cart-plus text-emerald-600"></i> Registrar Venta
+            <i class="fa-solid fa-cart-shopping text-emerald-600"></i> Registrar Venta
           </h2>
-          <form id="formVenta" onsubmit="guardarVenta(event)" class="space-y-3">
+          <form onsubmit="guardarVenta(event)" class="space-y-3">
             <div>
-              <label class="block text-xs font-semibold text-slate-600 mb-1">Origen / Proyecto</label>
-              <select id="ventaOrigen" onchange="cargarSelectProductosVenta()" class="w-full p-2.5 border rounded-lg bg-slate-50 text-sm" required>
-                <option value="Navidad">Navidad (Público)</option>
-                <option value="Origen Lumbre">Origen Lumbre (Privado - Requiere PIN)</option>
+              <label class="block text-xs font-semibold text-slate-600 mb-1">Categoría</label>
+              <select id="ventaCat" onchange="cargarSelectProductosVenta()" class="w-full p-2.5 border rounded-lg bg-slate-50 text-sm" required>
+                <option value="Navidad">Navidad</option>
+                <option value="Origen Lumbre">Comercial / Origen Lumbre</option>
               </select>
             </div>
             <div>
               <label class="block text-xs font-semibold text-slate-600 mb-1">Producto</label>
-              <select id="ventaProducto" onchange="actualizarPrecioSugerido()" class="w-full p-2.5 border rounded-lg text-sm" required>
+              <select id="ventaProdId" onchange="actualizarPrecioVenta()" class="w-full p-2.5 border rounded-lg text-sm" required>
                 <option value="">-- Seleccionar --</option>
               </select>
             </div>
             <div class="grid grid-cols-2 gap-3">
               <div>
-                <label class="block text-xs font-semibold text-slate-600 mb-1">Precio Venta ($)</label>
+                <label class="block text-xs font-semibold text-slate-600 mb-1">Precio Unitario ($)</label>
                 <input type="number" id="ventaPrecio" min="0" step="100" class="w-full p-2.5 border rounded-lg text-sm" required>
               </div>
               <div>
@@ -207,228 +203,268 @@
               </div>
             </div>
             <div>
-              <label class="block text-xs font-semibold text-slate-600 mb-1">Cliente</label>
-              <input type="text" id="ventaCliente" placeholder="Ej. Juan Pérez" class="w-full p-2.5 border rounded-lg text-sm">
+              <label class="block text-xs font-semibold text-slate-600 mb-1">Nombre del Cliente</label>
+              <input type="text" id="ventaCliente" placeholder="Ej. Juan Pérez (Opcional)" class="w-full p-2.5 border rounded-lg text-sm">
             </div>
+
             <button type="submit" class="w-full bg-emerald-600 hover:bg-emerald-700 text-white font-bold py-3 rounded-lg shadow transition">
-              Registrar Venta
+              Completar Venta
+            </button>
+          </form>
+
+          <!-- Botón para abrir postal -->
+          <div id="contenedorBotonPostal" class="hidden border-t pt-4 text-center">
+            <button onclick="abrirModalPostal()" class="w-full bg-gradient-to-r from-rose-700 to-emerald-800 hover:from-rose-800 hover:to-emerald-900 text-white font-bold py-3 rounded-lg shadow-md flex items-center justify-center gap-2 transition">
+              <i class="fa-solid fa-gift text-amber-300"></i> Generar Postal Navideña (Mate y Lau)
+            </button>
+          </div>
+        </div>
+      </section>
+
+      <!-- 3. CAJA Y GASTOS OPERATIVOS -->
+      <section id="sec-gastos-caja" class="hidden max-w-lg mx-auto">
+        <div class="bg-white p-6 rounded-xl shadow-sm border border-slate-200 space-y-4">
+          <h2 class="text-base font-bold text-slate-800 flex items-center gap-2">
+            <i class="fa-solid fa-receipt text-rose-600"></i> Registrar Gasto de Caja
+          </h2>
+          <form onsubmit="guardarGastoCaja(event)" class="space-y-3">
+            <div>
+              <label class="block text-xs font-semibold text-slate-600 mb-1">Categoría Asociada</label>
+              <select id="gastoCat" class="w-full p-2.5 border rounded-lg bg-slate-50 text-sm" required>
+                <option value="Navidad">Navidad</option>
+                <option value="Gastos Personales">Gastos Personales</option>
+                <option value="Origen Lumbre">Origen Lumbre</option>
+              </select>
+            </div>
+            <div>
+              <label class="block text-xs font-semibold text-slate-600 mb-1">Concepto / Detalle</label>
+              <input type="text" id="gastoConcepto" placeholder="Ej. Paquete de bolsas, Cinta" class="w-full p-2.5 border rounded-lg text-sm" required>
+            </div>
+            <div>
+              <label class="block text-xs font-semibold text-slate-600 mb-1">Monto ($)</label>
+              <input type="number" id="gastoMonto" min="0" step="100" class="w-full p-2.5 border rounded-lg text-sm" required>
+            </div>
+            <button type="submit" class="w-full bg-rose-600 hover:bg-rose-700 text-white font-bold py-3 rounded-lg shadow transition">
+              Registrar Gasto
             </button>
           </form>
         </div>
       </section>
 
-      <!-- 4. INVENTARIO NAVIDAD (PÚBLICO) -->
-      <section id="sec-inv-navidad" class="hidden space-y-4">
-        <div class="flex justify-between items-center">
-          <h2 class="text-base font-bold text-slate-800">Inventario Venta Navidad</h2>
-          <button onclick="abrirModal('modalProductoNavidad')" class="bg-rose-600 hover:bg-rose-700 text-white px-3 py-1.5 rounded-lg text-xs font-bold flex items-center gap-1.5">
-            <i class="fa-solid fa-plus"></i> Crear Producto
-          </button>
+      <!-- 4. INVENTARIO GENERAL -->
+      <section id="sec-inventario" class="hidden space-y-4">
+        <div class="flex flex-col sm:flex-row justify-between items-start sm:items-center gap-3">
+          <h2 class="text-base font-bold text-slate-800">Inventario General</h2>
+          <div class="flex gap-2">
+            <button onclick="abrirModal('modalPlano')" class="bg-slate-800 hover:bg-slate-900 text-white px-3 py-2 rounded-lg text-xs font-bold flex items-center gap-1.5">
+              <i class="fa-solid fa-file-csv"></i> Carga Masiva
+            </button>
+            <button onclick="exportarExcel()" class="bg-emerald-700 hover:bg-emerald-800 text-white px-3 py-2 rounded-lg text-xs font-bold flex items-center gap-1.5">
+              <i class="fa-solid fa-file-excel"></i> Exportar
+            </button>
+            <button onclick="prepararModalProducto()" class="bg-emerald-600 hover:bg-emerald-700 text-white px-3 py-2 rounded-lg text-xs font-bold flex items-center gap-1.5">
+              <i class="fa-solid fa-plus"></i> Nuevo Producto
+            </button>
+          </div>
         </div>
+
+        <div class="bg-white p-3 rounded-xl shadow-sm border border-slate-200 flex flex-col sm:flex-row gap-3">
+          <input type="text" id="invBuscar" oninput="renderizarInventario()" placeholder="🔍 Buscar producto..." class="w-full sm:w-1/2 p-2 border rounded-lg text-xs">
+          <select id="invFiltroCat" onchange="renderizarInventario()" class="w-full sm:w-1/2 p-2 border rounded-lg text-xs bg-slate-50">
+            <option value="Todos">Todas las categorías</option>
+            <option value="Navidad">Navidad</option>
+            <option value="Origen Lumbre">Comercial / Lumbre</option>
+          </select>
+        </div>
+
         <div class="bg-white rounded-xl shadow-sm border border-slate-200 overflow-x-auto">
           <table class="w-full text-left text-xs">
             <thead class="bg-slate-50 border-b uppercase text-slate-500">
               <tr>
                 <th class="p-3">Producto</th>
+                <th class="p-3">Categoría</th>
                 <th class="p-3">Costo</th>
                 <th class="p-3">P. Venta</th>
                 <th class="p-3">Stock</th>
-                <th class="p-3 text-right">Acción</th>
+                <th class="p-3 text-right">Acciones</th>
               </tr>
             </thead>
-            <tbody id="tablaInvNavidad" class="divide-y divide-slate-100"></tbody>
+            <tbody id="tablaInventario" class="divide-y divide-slate-100"></tbody>
           </table>
         </div>
       </section>
 
-      <!-- 5. INVENTARIO ORIGEN LUMBRE (PRIVADO) -->
-      <section id="sec-inv-lumbre" class="hidden space-y-4">
+      <!-- 5. HISTORIAL DE TRANSACCIONES -->
+      <section id="sec-historial" class="hidden space-y-4">
         <div class="flex justify-between items-center">
-          <h2 class="text-base font-bold text-amber-900">Inventario Venta Origen Lumbre</h2>
-          <button onclick="abrirModal('modalProductoLumbre')" class="bg-amber-600 hover:bg-amber-700 text-white px-3 py-1.5 rounded-lg text-xs font-bold flex items-center gap-1.5">
-            <i class="fa-solid fa-plus"></i> Crear Producto Lumbre
-          </button>
+          <h2 class="text-base font-bold text-slate-800">Historial de Operaciones</h2>
+          <select id="histFiltroCat" onchange="renderizarHistorial()" class="p-2 border rounded-lg text-xs bg-white">
+            <option value="Todos">Todas las categorías</option>
+            <option value="Navidad">Navidad</option>
+            <option value="Origen Lumbre">Origen Lumbre</option>
+            <option value="Gastos Personales">Gastos Personales</option>
+          </select>
         </div>
-        <div class="bg-white rounded-xl shadow-sm border border-slate-200 overflow-x-auto">
-          <table class="w-full text-left text-xs">
-            <thead class="bg-amber-50 border-b uppercase text-amber-800">
-              <tr>
-                <th class="p-3">Producto</th>
-                <th class="p-3">Costo</th>
-                <th class="p-3">P. Venta</th>
-                <th class="p-3">Stock</th>
-                <th class="p-3 text-right">Acción</th>
-              </tr>
-            </thead>
-            <tbody id="tablaInvLumbre" class="divide-y divide-slate-100"></tbody>
-          </table>
-        </div>
-      </section>
 
-      <!-- 6. HERRAMIENTAS & EQUIPOS (PÚBLICO) -->
-      <section id="sec-inv-herramientas" class="hidden space-y-4">
-        <div class="flex justify-between items-center">
-          <h2 class="text-base font-bold text-slate-800">Herramientas, Equipos & Gastos</h2>
-          <button onclick="abrirModal('modalHerramienta')" class="bg-blue-600 hover:bg-blue-700 text-white px-3 py-1.5 rounded-lg text-xs font-bold flex items-center gap-1.5">
-            <i class="fa-solid fa-plus"></i> Registrar Ítem
-          </button>
-        </div>
-        <div class="bg-white rounded-xl shadow-sm border border-slate-200 overflow-x-auto">
-          <table class="w-full text-left text-xs">
-            <thead class="bg-slate-50 border-b uppercase text-slate-500">
-              <tr>
-                <th class="p-3">Descripción</th>
-                <th class="p-3">Proyecto / Cuenta</th>
-                <th class="p-3">Costo</th>
-                <th class="p-3">Cant</th>
-                <th class="p-3 text-right">Acción</th>
-              </tr>
-            </thead>
-            <tbody id="tablaHerramientas" class="divide-y divide-slate-100"></tbody>
-          </table>
-        </div>
-      </section>
-
-      <!-- 7. HISTORIAL TRANSACCIONAL -->
-      <section id="sec-movimientos" class="hidden space-y-4">
-        <div class="flex justify-between items-center">
-          <h2 class="text-base font-bold text-slate-800">Historial Transaccional</h2>
-        </div>
         <div class="bg-white rounded-xl shadow-sm border border-slate-200 overflow-x-auto">
           <table class="w-full text-left text-xs">
             <thead class="bg-slate-50 border-b uppercase text-slate-500">
               <tr>
                 <th class="p-3">Fecha</th>
                 <th class="p-3">Tipo</th>
-                <th class="p-3">Cuenta</th>
+                <th class="p-3">Categoría</th>
                 <th class="p-3">Descripción</th>
                 <th class="p-3 text-right">Monto</th>
+                <th class="p-3 text-right">Acción</th>
               </tr>
             </thead>
-            <tbody id="tablaMovimientos" class="divide-y divide-slate-100"></tbody>
+            <tbody id="tablaHistorial" class="divide-y divide-slate-100"></tbody>
           </table>
         </div>
       </section>
 
-      <!-- 8. CONFIGURACIÓN (CAMBIO DE SEGURIDAD & NUBE) -->
+      <!-- 6. AJUSTES & CREDENCIALES -->
       <section id="sec-config" class="hidden max-w-lg mx-auto space-y-6">
-        
-        <!-- Cambiar Credenciales -->
         <div class="bg-white p-6 rounded-xl shadow-sm border border-slate-200 space-y-4">
           <h2 class="text-base font-bold text-slate-800 flex items-center gap-2">
-            <i class="fa-solid fa-user-shield text-amber-600"></i> Cambiar Usuario, Contraseña y PIN
+            <i class="fa-solid fa-key text-amber-600"></i> Cambiar Usuario, Contraseña y PIN
           </h2>
           <form onsubmit="guardarNuevasCredenciales(event)" class="space-y-3">
             <div>
-              <label class="block text-xs font-semibold text-slate-600 mb-1">Usuario Principal</label>
+              <label class="block text-xs font-semibold text-slate-600 mb-1">Contraseña o PIN Actual (Obligatorio)</label>
+              <input type="password" id="cfgActual" class="w-full p-2.5 border rounded-lg text-xs" required placeholder="Clave actual">
+            </div>
+            <hr class="my-2">
+            <div>
+              <label class="block text-xs font-semibold text-slate-600 mb-1">Nuevo Usuario Principal</label>
               <input type="text" id="cfgUsuario" class="w-full p-2.5 border rounded-lg text-xs" required>
             </div>
             <div>
-              <label class="block text-xs font-semibold text-slate-600 mb-1">Contraseña Principal</label>
+              <label class="block text-xs font-semibold text-slate-600 mb-1">Nueva Contraseña Principal</label>
               <input type="password" id="cfgPassword" class="w-full p-2.5 border rounded-lg text-xs" required>
             </div>
             <div>
-              <label class="block text-xs font-semibold text-slate-600 mb-1">PIN Privado de 4 dígitos (Origen Lumbre)</label>
+              <label class="block text-xs font-semibold text-slate-600 mb-1">Nuevo PIN de 4 dígitos</label>
               <input type="password" id="cfgPin" maxlength="4" class="w-full p-2.5 border rounded-lg text-xs text-center font-bold tracking-widest" required>
             </div>
             <button type="submit" class="w-full bg-amber-500 hover:bg-amber-600 text-slate-900 font-bold py-2.5 rounded-lg text-xs transition">
-              Guardar Nuevas Credenciales
+              Guardar Cambios
             </button>
           </form>
-        </div>
-
-        <!-- Sincronización Nube -->
-        <div class="bg-white p-6 rounded-xl shadow-sm border border-slate-200 space-y-4">
-          <h2 class="text-base font-bold text-slate-800 flex items-center gap-2">
-            <i class="fa-solid fa-cloud-arrow-up text-blue-600"></i> Conexión Google Sheets
-          </h2>
-          <div>
-            <label class="block text-xs font-semibold text-slate-600 mb-1">URL Google Apps Script (/exec)</label>
-            <input type="text" id="apiScriptUrl" class="w-full p-2.5 border rounded-lg text-xs">
-          </div>
-          <button onclick="guardarApiUrl()" class="w-full bg-blue-600 hover:bg-blue-700 text-white font-bold py-2.5 rounded-lg text-xs transition">
-            Sincronizar Nube
-          </button>
         </div>
       </section>
 
     </main>
 
-    <!-- MODAL PIN DE DESBLOQUEO -->
-    <div id="modalPinLumbre" class="fixed inset-0 bg-slate-900/80 backdrop-blur-md hidden flex justify-center items-center p-4 z-50">
-      <div class="bg-white rounded-2xl p-6 max-w-xs w-full space-y-4 text-center shadow-2xl">
-        <div class="w-12 h-12 bg-amber-100 text-amber-600 rounded-full flex items-center justify-center mx-auto text-xl">
-          <i class="fa-solid fa-key"></i>
+    <!-- MODAL POSTAL NAVIDEÑA (MATE Y LAU - PLANTILLA FOTOGRÁFICA) -->
+    <div id="modalPostal" class="fixed inset-0 bg-slate-900/85 backdrop-blur-md hidden flex justify-center items-center p-4 z-50 overflow-y-auto">
+      <div class="flex flex-col items-center max-w-md w-full space-y-4 my-auto">
+        
+        <!-- LIENZO DE LA POSTAL CON LA IMAGEN DE FONDO PERFECTA -->
+        <div id="postalRenderArea" class="postal-bg-container rounded-2xl p-6 shadow-2xl relative text-center text-[#21110b] flex flex-col justify-between overflow-hidden">
+          
+          <!-- Encabezado con Nombre y Eslogan -->
+          <div class="space-y-1 pt-6">
+            <h1 class="font-script text-5xl text-[#6d181c] leading-none drop-shadow-sm">Mate y Lau</h1>
+            <p class="text-[9px] uppercase tracking-[0.22em] text-[#785928] font-bold">PEQUEÑOS DETALLES, GRANDES MOMENTOS.</p>
+            <p class="text-[#78181c] text-xs">♥</p>
+          </div>
+
+          <!-- Bloque Central: Mensaje Poético exacto -->
+          <div class="space-y-3 px-2 py-1 bg-white/30 backdrop-blur-[2px] rounded-xl my-auto">
+            <p class="font-serif-title text-[10px] tracking-widest text-[#1d3d29] font-bold uppercase">UNA NAVIDAD LLENA DE DETALLES</p>
+            <h2 class="font-script text-4xl text-[#6d181c]">¡Gracias por tu compra!</h2>
+
+            <div class="font-body-carmel text-xs leading-relaxed text-[#2b1e17] space-y-2 pt-1">
+              <p id="postalSaludo" class="text-sm font-semibold text-[#1a3825]">Hola, [Cliente]:</p>
+              <p class="text-[11px]">
+                Nos hace muy felices que hayas elegido nuestros productos para acompañar tus momentos especiales.
+              </p>
+              <p class="text-[11px]">
+                Que esta Navidad esté llena de amor, unión y recuerdos bonitos junto a quienes más quieres.
+              </p>
+            </div>
+          </div>
+
+          <!-- Pie de página: Firma y Fecha -->
+          <div class="space-y-1 pb-4">
+            <p class="font-body-carmel italic text-[11px] text-[#523e32]">Con cariño,</p>
+            <h3 class="font-script text-4xl text-[#6d181c]">Mate y Lau</h3>
+            <p class="text-[8px] uppercase tracking-widest text-[#785928]">Pequeños detalles, grandes momentos.</p>
+            <p class="text-[#6d181c] text-[9px]">♥</p>
+            
+            <div class="pt-2">
+              <span class="inline-flex items-center gap-1 bg-[#f5ede0]/90 text-[#423328] text-[9px] font-mono px-3 py-0.5 rounded-full border border-[#d2c0a8]">
+                📅 <span id="postalFecha">2026-10-13</span>
+              </span>
+            </div>
+          </div>
+
         </div>
-        <div>
-          <h3 class="font-bold text-slate-800 text-base">Origen Lumbre Privado</h3>
-          <p class="text-xs text-slate-500">Ingresa tu PIN de 4 dígitos</p>
+
+        <!-- Botones de Descarga e Interacción -->
+        <div class="flex flex-wrap gap-2 w-full print:hidden">
+          <button onclick="cerrarModal('modalPostal')" class="flex-1 py-2.5 bg-slate-800 hover:bg-slate-700 text-slate-300 font-bold rounded-xl text-xs transition">
+            Cerrar
+          </button>
+          <button id="btnDescargarPNG" onclick="descargarPostalPNG()" class="flex-1 py-2.5 bg-emerald-600 hover:bg-emerald-700 text-white font-bold rounded-xl text-xs shadow-lg flex items-center justify-center gap-1.5 transition">
+            <i class="fa-solid fa-image"></i> Descargar PNG
+          </button>
+          <button id="btnDescargarPDF" onclick="descargarPostalPDF()" class="py-2.5 px-4 bg-rose-700 hover:bg-rose-800 text-white font-bold rounded-xl text-xs shadow-lg flex items-center justify-center gap-1.5 transition">
+            <i class="fa-solid fa-file-pdf"></i> PDF
+          </button>
         </div>
-        <input type="password" id="inputPinLumbre" maxlength="4" placeholder="••••" class="w-full text-center text-2xl tracking-widest font-bold p-3 border-2 border-slate-200 rounded-xl outline-none focus:border-amber-500">
-        <p id="pinError" class="text-xs text-rose-500 font-bold hidden">PIN Incorrecto</p>
-        <div class="flex gap-2">
-          <button type="button" onclick="cerrarModal('modalPinLumbre')" class="w-1/2 py-2.5 border rounded-lg text-xs font-bold text-slate-600">Cancelar</button>
-          <button type="button" onclick="verificarPinLumbre()" class="w-1/2 py-2.5 bg-amber-500 hover:bg-amber-600 text-slate-900 font-bold rounded-lg text-xs">Ingresar</button>
+
+      </div>
+    </div>
+
+    <!-- MODAL CARGA MASIVA -->
+    <div id="modalPlano" class="fixed inset-0 bg-slate-900/50 backdrop-blur-sm hidden flex justify-center items-center p-4 z-50">
+      <div class="bg-white rounded-xl p-5 max-w-md w-full space-y-3">
+        <h3 class="font-bold text-slate-800 text-sm">Carga Masiva de Productos</h3>
+        <p class="text-xs text-slate-500">Pega tu lista separada por comas (Nombre, Categoría, Costo, Precio, Stock):</p>
+        <textarea id="txtPlano" rows="5" class="w-full p-2.5 border rounded-lg text-xs font-mono" placeholder="Gorro Navideño, Navidad, 5000, 12000, 10&#10;Aceite Lumbre, Origen Lumbre, 8000, 18000, 5"></textarea>
+        <div class="flex justify-end gap-2 pt-2">
+          <button type="button" onclick="cerrarModal('modalPlano')" class="px-3 py-1.5 border rounded text-xs">Cancelar</button>
+          <button type="button" onclick="procesarPlanoMasivo()" class="px-3 py-1.5 bg-slate-900 text-white rounded font-bold text-xs">Cargar Productos</button>
         </div>
       </div>
     </div>
 
-    <!-- MODALES DE PRODUCTOS -->
-    <div id="modalProductoNavidad" class="fixed inset-0 bg-slate-900/50 backdrop-blur-sm hidden flex justify-center items-center p-4 z-50">
+    <!-- MODAL PRODUCTO -->
+    <div id="modalProducto" class="fixed inset-0 bg-slate-900/50 backdrop-blur-sm hidden flex justify-center items-center p-4 z-50">
       <div class="bg-white rounded-xl p-5 max-w-sm w-full space-y-3">
-        <h3 class="font-bold text-slate-800 text-sm">Nuevo Producto Navidad</h3>
-        <form onsubmit="guardarProductoNavidad(event)" class="space-y-2 text-xs">
-          <input type="text" id="pnNombre" placeholder="Nombre Producto" class="w-full p-2 border rounded" required>
-          <div class="grid grid-cols-2 gap-2">
-            <input type="number" id="pnCosto" placeholder="Costo ($)" class="w-full p-2 border rounded" required>
-            <input type="number" id="pnPrecio" placeholder="Precio Venta ($)" class="w-full p-2 border rounded" required>
-          </div>
-          <input type="number" id="pnStock" placeholder="Stock Inicial" class="w-full p-2 border rounded" required>
-          <div class="flex justify-end gap-2 pt-2">
-            <button type="button" onclick="cerrarModal('modalProductoNavidad')" class="px-3 py-1.5 border rounded">Cancelar</button>
-            <button type="submit" class="px-3 py-1.5 bg-rose-600 text-white rounded font-bold">Guardar</button>
-          </div>
-        </form>
-      </div>
-    </div>
-
-    <div id="modalProductoLumbre" class="fixed inset-0 bg-slate-900/50 backdrop-blur-sm hidden flex justify-center items-center p-4 z-50">
-      <div class="bg-white rounded-xl p-5 max-w-sm w-full space-y-3">
-        <h3 class="font-bold text-amber-900 text-sm">Nuevo Producto Origen Lumbre</h3>
-        <form onsubmit="guardarProductoLumbre(event)" class="space-y-2 text-xs">
-          <input type="text" id="plNombre" placeholder="Nombre Producto" class="w-full p-2 border rounded" required>
-          <div class="grid grid-cols-2 gap-2">
-            <input type="number" id="plCosto" placeholder="Costo ($)" class="w-full p-2 border rounded" required>
-            <input type="number" id="plPrecio" placeholder="Precio Venta ($)" class="w-full p-2 border rounded" required>
-          </div>
-          <input type="number" id="plStock" placeholder="Stock Inicial" class="w-full p-2 border rounded" required>
-          <div class="flex justify-end gap-2 pt-2">
-            <button type="button" onclick="cerrarModal('modalProductoLumbre')" class="px-3 py-1.5 border rounded">Cancelar</button>
-            <button type="submit" class="px-3 py-1.5 bg-amber-600 text-white rounded font-bold">Guardar</button>
-          </div>
-        </form>
-      </div>
-    </div>
-
-    <div id="modalHerramienta" class="fixed inset-0 bg-slate-900/50 backdrop-blur-sm hidden flex justify-center items-center p-4 z-50">
-      <div class="bg-white rounded-xl p-5 max-w-sm w-full space-y-3">
-        <h3 class="font-bold text-slate-800 text-sm">Registrar Herramienta / Equipo</h3>
-        <form onsubmit="guardarHerramienta(event)" class="space-y-2 text-xs">
-          <input type="text" id="phNombre" placeholder="Descripción" class="w-full p-2 border rounded" required>
-          <select id="phCategoria" class="w-full p-2 border rounded" required>
+        <h3 id="modalProductoTitulo" class="font-bold text-slate-800 text-sm">Nuevo Producto</h3>
+        <form onsubmit="guardarProductoModal(event)" class="space-y-2 text-xs">
+          <input type="hidden" id="prodEditId">
+          <input type="text" id="prodNombre" placeholder="Nombre del Producto" class="w-full p-2 border rounded" required>
+          <select id="prodCategoria" class="w-full p-2 border rounded" required>
             <option value="Navidad">Navidad</option>
-            <option value="Origen Lumbre">Origen Lumbre</option>
-            <option value="Gastos Personales">Gastos Personales</option>
+            <option value="Origen Lumbre">Comercial / Lumbre</option>
           </select>
           <div class="grid grid-cols-2 gap-2">
-            <input type="number" id="phCosto" placeholder="Costo ($)" class="w-full p-2 border rounded" required>
-            <input type="number" id="phCantidad" value="1" placeholder="Cantidad" class="w-full p-2 border rounded" required>
+            <input type="number" id="prodCosto" placeholder="Costo ($)" class="w-full p-2 border rounded" required>
+            <input type="number" id="prodPrecio" placeholder="P. Venta ($)" class="w-full p-2 border rounded" required>
           </div>
+          <input type="number" id="prodStock" placeholder="Stock" class="w-full p-2 border rounded" required>
           <div class="flex justify-end gap-2 pt-2">
-            <button type="button" onclick="cerrarModal('modalHerramienta')" class="px-3 py-1.5 border rounded">Cancelar</button>
-            <button type="submit" class="px-3 py-1.5 bg-blue-600 text-white rounded font-bold">Guardar</button>
+            <button type="button" onclick="cerrarModal('modalProducto')" class="px-3 py-1.5 border rounded">Cancelar</button>
+            <button type="submit" class="px-3 py-1.5 bg-emerald-600 text-white rounded font-bold">Guardar</button>
           </div>
         </form>
+      </div>
+    </div>
+
+    <!-- MODAL PIN DISCRETO -->
+    <div id="modalPin" class="fixed inset-0 bg-slate-900/80 backdrop-blur-md hidden flex justify-center items-center p-4 z-50">
+      <div class="bg-white rounded-2xl p-6 max-w-xs w-full space-y-4 text-center shadow-2xl">
+        <h3 class="font-bold text-slate-800 text-base">Ingresa tu PIN de 4 dígitos</h3>
+        <input type="password" id="inputPinVal" maxlength="4" placeholder="••••" class="w-full text-center text-2xl tracking-widest font-bold p-3 border-2 rounded-xl outline-none focus:border-emerald-500">
+        <p id="pinValError" class="text-xs text-rose-500 font-bold hidden">PIN Incorrecto</p>
+        <div class="flex gap-2">
+          <button type="button" onclick="cancelarPinModal()" class="w-1/2 py-2.5 border rounded-lg text-xs font-bold text-slate-600">Cancelar</button>
+          <button type="button" onclick="verificarPinModal()" class="w-1/2 py-2.5 bg-slate-900 text-white font-bold rounded-lg text-xs">Confirmar</button>
+        </div>
       </div>
     </div>
 
@@ -439,37 +475,39 @@
       navigator.serviceWorker.register('sw.js').catch(() => {});
     }
 
-    let credenciales = JSON.parse(localStorage.getItem('CF_CREDENCIALES')) || {
+    let credenciales = JSON.parse(localStorage.getItem('CF_CREDENCIALES_V4')) || {
       user: "origenlumbre",
       pass: "navidad2026",
       pin: "1234"
     };
 
     let lumbreDesbloqueado = false;
-    let pestanaPendiente = null;
-    let scriptApiUrl = localStorage.getItem('SCRIPT_API_URL') || 'https://script.google.com/macros/s/AKfycbwSaFgXkFrzFi5-BDUb06GnmFUSmTHHX6Qjk-WYVgv7qfa0f5aCYQdbMlO_5q1ROAz9/exec';
+    let ultimaVentaRegistrada = null;
 
-    let datos = JSON.parse(localStorage.getItem('SISTEMA_FINANCIERO_DATOS_V2')) || {
-      invNavidad: [
-        { id: 1, nombre: 'Guirnalda de Luces LED 10M', costo: 4723, precio: 12000, stock: 2 },
-        { id: 2, nombre: 'Gorro Decorativo Navideño', costo: 6006, precio: 15000, stock: 3 }
+    let datos = JSON.parse(localStorage.getItem('SISTEMA_FINANCIERO_DATOS_V4')) || {
+      productos: [
+        { id: 1, nombre: 'Guirnalda de Luces LED 10M', categoria: 'Navidad', costo: 4723, precio: 12000, stock: 10 },
+        { id: 2, nombre: 'Gorro Decorativo Navideño', categoria: 'Navidad', costo: 6006, precio: 15000, stock: 8 },
+        { id: 3, nombre: 'Grasa de Cerdo (Tarro)', categoria: 'Origen Lumbre', costo: 8000, precio: 18000, stock: 20 }
       ],
-      invLumbre: [
-        { id: 1, nombre: 'Grasa de Cerdo (Tarro)', costo: 8000, precio: 18000, stock: 20 }
-      ],
-      invHerramientas: [
-        { id: 1, nombre: 'Termómetro Digital', categoria: 'Origen Lumbre', costo: 16934, cantidad: 1 },
-        { id: 2, nombre: 'Molde de silicona estilo 2', categoria: 'Navidad', costo: 14453, cantidad: 1 }
-      ],
-      movimientos: []
+      movimientos: [],
+      gastosCaja: []
     };
 
-    let grafNavidad = null;
-    let grafLumbre = null;
+    let miGrafico = null;
+
+    window.onload = function() {
+      if (localStorage.getItem('CF_SESION_ACTIVA') === 'true') {
+        document.getElementById('loginSection').classList.add('hidden');
+        document.getElementById('appSection').classList.remove('hidden');
+        inicializarApp();
+      }
+    };
 
     function validarLogin(e) {
       e.preventDefault();
       if (document.getElementById('loginUser').value === credenciales.user && document.getElementById('loginPass').value === credenciales.pass) {
+        localStorage.setItem('CF_SESION_ACTIVA', 'true');
         document.getElementById('loginSection').classList.add('hidden');
         document.getElementById('appSection').classList.remove('hidden');
         inicializarApp();
@@ -479,101 +517,57 @@
     }
 
     function cerrarSesion() {
+      localStorage.removeItem('CF_SESION_ACTIVA');
       lumbreDesbloqueado = false;
       document.getElementById('appSection').classList.add('hidden');
       document.getElementById('loginSection').classList.remove('hidden');
     }
 
     function inicializarApp() {
-      document.getElementById('apiScriptUrl').value = scriptApiUrl;
       document.getElementById('cfgUsuario').value = credenciales.user;
       document.getElementById('cfgPassword').value = credenciales.pass;
       document.getElementById('cfgPin').value = credenciales.pin;
       guardarYActualizar();
+      cambiarPestana('dashboard');
     }
 
-    function toggleAccesoLumbre() {
-      if (lumbreDesbloqueado) {
-        lumbreDesbloqueado = false;
-        actualizarEstadoBotonLumbre();
-        cambiarPestana('dash-navidad');
+    function cambiarFiltroDashboard() {
+      const val = document.getElementById('dashFiltro').value;
+      if (val === 'Origen Lumbre' && !lumbreDesbloqueado) {
+        document.getElementById('inputPinVal').value = '';
+        document.getElementById('pinValError').classList.add('hidden');
+        abrirModal('modalPin');
       } else {
-        abrirModalPin();
+        renderizarDashboard();
       }
     }
 
-    function intentarAccesoLumbre(pestana) {
-      if (lumbreDesbloqueado) {
-        cambiarPestana(pestana);
-      } else {
-        pestanaPendiente = pestana;
-        abrirModalPin();
-      }
-    }
-
-    function abrirModalPin() {
-      document.getElementById('inputPinLumbre').value = '';
-      document.getElementById('pinError').classList.add('hidden');
-      abrirModal('modalPinLumbre');
-      setTimeout(() => document.getElementById('inputPinLumbre').focus(), 200);
-    }
-
-    function verificarPinLumbre() {
-      const pin = document.getElementById('inputPinLumbre').value;
+    function verificarPinModal() {
+      const pin = document.getElementById('inputPinVal').value;
       if (pin === credenciales.pin) {
         lumbreDesbloqueado = true;
-        cerrarModal('modalPinLumbre');
-        actualizarEstadoBotonLumbre();
-        renderizarTablas();
-        cargarSelectProductosVenta();
-
-        if (pestanaPendiente) {
-          cambiarPestana(pestanaPendiente);
-          pestanaPendiente = null;
-        }
+        cerrarModal('modalPin');
+        renderizarDashboard();
       } else {
-        document.getElementById('pinError').classList.remove('hidden');
+        document.getElementById('pinValError').classList.remove('hidden');
       }
     }
 
-    function actualizarEstadoBotonLumbre() {
-      const btn = document.getElementById('btnEstadoLumbre');
-      if (lumbreDesbloqueado) {
-        btn.innerHTML = '<i class="fa-solid fa-lock-open text-emerald-400"></i> Lumbre: Activo';
-        btn.className = "text-xs px-2.5 py-1 rounded-full bg-emerald-950 text-emerald-300 border border-emerald-700 hover:bg-emerald-900 transition";
-      } else {
-        btn.innerHTML = '<i class="fa-solid fa-lock text-amber-400"></i> Lumbre: Bloqueado';
-        btn.className = "text-xs px-2.5 py-1 rounded-full bg-slate-800 text-slate-300 border border-slate-700 hover:bg-slate-700 transition";
-      }
+    function cancelarPinModal() {
+      cerrarModal('modalPin');
+      document.getElementById('dashFiltro').value = 'Navidad';
+      renderizarDashboard();
     }
 
     function guardarYActualizar() {
-      localStorage.setItem('SISTEMA_FINANCIERO_DATOS_V2', JSON.stringify(datos));
-      renderizarDashboards();
-      renderizarTablas();
+      localStorage.setItem('SISTEMA_FINANCIERO_DATOS_V4', JSON.stringify(datos));
+      renderizarDashboard();
+      renderizarInventario();
+      renderizarHistorial();
       cargarSelectProductosVenta();
-
-      if (scriptApiUrl) {
-        fetch(scriptApiUrl, {
-          method: 'POST',
-          mode: 'no-cors',
-          headers: { 'Content-Type': 'application/json' },
-          body: JSON.stringify([
-            ['Módulo', 'Datos_JSON'],
-            ['InventarioNavidad', JSON.stringify(datos.invNavidad)],
-            ['InventarioLumbre', JSON.stringify(datos.invLumbre)],
-            ['Herramientas', JSON.stringify(datos.invHerramientas)],
-            ['Movimientos', JSON.stringify(datos.movimientos)]
-          ])
-        });
-      }
     }
 
     function cambiarPestana(id) {
-      if ((id === 'dash-lumbre' || id === 'inv-lumbre') && !lumbreDesbloqueado) {
-        intentarAccesoLumbre(id);
-        return;
-      }
       document.querySelectorAll('section').forEach(s => s.classList.add('hidden'));
       document.querySelectorAll('.tab-btn').forEach(b => b.classList.remove('active'));
       document.getElementById('sec-' + id).classList.remove('hidden');
@@ -584,228 +578,307 @@
       return new Intl.NumberFormat('es-CO', { style: 'currency', currency: 'COP', maximumFractionDigits: 0 }).format(v);
     }
 
-    function renderizarDashboards() {
-      let calc = { lumbreIng: 0, lumbreGas: 0, navidadIng: 0, navidadGas: 0, personalGas: 0 };
-      datos.movimientos.forEach(m => {
-        if (m.cuenta === 'Origen Lumbre') m.tipo === 'Ingreso' ? calc.lumbreIng += m.monto : calc.lumbreGas += m.monto;
-        else if (m.cuenta === 'Navidad') m.tipo === 'Ingreso' ? calc.navidadIng += m.monto : calc.navidadGas += m.monto;
-        else if (m.cuenta === 'Gastos Personales') calc.personalGas += m.monto;
+    function renderizarDashboard() {
+      const filtro = document.getElementById('dashFiltro').value;
+      const hoy = new Date().toISOString().split('T')[0];
+      const mesActual = hoy.substring(0, 7);
+
+      let vDia = 0, vMes = 0, vCosto = 0, vTotal = 0, gCaja = 0;
+
+      datos.movimientos.filter(m => m.categoria === filtro).forEach(m => {
+        vTotal += m.monto;
+        vCosto += m.costo * m.cantidad;
+        if (m.fecha === hoy) vDia += m.monto;
+        if (m.fecha.startsWith(mesActual)) vMes += m.monto;
       });
 
-      // Dashboard Público
-      document.getElementById('dash-navidad-neto').textContent = formatoMoneda(calc.navidadIng - calc.navidadGas);
-      document.getElementById('dash-navidad-ing').textContent = formatoMoneda(calc.navidadIng);
-      document.getElementById('dash-navidad-gas').textContent = formatoMoneda(calc.navidadGas);
-      document.getElementById('dash-personal-gas').textContent = formatoMoneda(calc.personalGas);
+      datos.gastosCaja.filter(g => g.categoria === filtro).forEach(g => {
+        gCaja += g.monto;
+      });
 
-      // Dashboard Privado Lumbre
-      document.getElementById('dash-lumbre-neto').textContent = formatoMoneda(calc.lumbreIng - calc.lumbreGas);
-      document.getElementById('dash-lumbre-ing').textContent = formatoMoneda(calc.lumbreIng);
-      document.getElementById('dash-lumbre-gas').textContent = formatoMoneda(calc.lumbreGas);
+      let totalInv = datos.productos.filter(p => p.categoria === filtro).reduce((acc, p) => acc + (p.costo * p.stock), 0);
+      let gananciaNetaBruta = vTotal - vCosto;
+      let utilidadLimpia = gananciaNetaBruta - gCaja;
 
-      // Gráficos
-      const ctxNav = document.getElementById('graficoNavidad').getContext('2d');
-      if (grafNavidad) grafNavidad.destroy();
-      grafNavidad = new Chart(ctxNav, {
+      document.getElementById('dashVentasDia').textContent = formatoMoneda(vDia);
+      document.getElementById('dashVentasMes').textContent = formatoMoneda(vMes);
+      document.getElementById('dashVentasCosto').textContent = formatoMoneda(vCosto);
+      document.getElementById('dashGananciaNeta').textContent = formatoMoneda(gananciaNetaBruta);
+
+      document.getElementById('dashTotalInvertido').textContent = formatoMoneda(totalInv);
+      document.getElementById('dashTotalGastosCaja').textContent = formatoMoneda(gCaja);
+      document.getElementById('dashUtilidadLimpia').textContent = formatoMoneda(utilidadLimpia);
+
+      const ctx = document.getElementById('graficoDashboard').getContext('2d');
+      if (miGrafico) miGrafico.destroy();
+      miGrafico = new Chart(ctx, {
         type: 'bar',
         data: {
-          labels: ['Navidad', 'Gastos Personales'],
-          datasets: [
-            { label: 'Ingresos', data: [calc.navidadIng, 0], backgroundColor: '#10b981' },
-            { label: 'Gastos', data: [calc.navidadGas, calc.personalGas], backgroundColor: '#f43f5e' }
-          ]
+          labels: ['Ventas Totales', 'Inversión / Costos', 'Gastos Caja', 'Utilidad Limpia'],
+          datasets: [{
+            label: filtro,
+            data: [vTotal, vCosto, gCaja, utilidadLimpia],
+            backgroundColor: ['#10b981', '#f59e0b', '#ef4444', '#3b82f6']
+          }]
         },
         options: { responsive: true, maintainAspectRatio: false }
       });
-
-      const ctxLum = document.getElementById('graficoLumbre').getContext('2d');
-      if (grafLumbre) grafLumbre.destroy();
-      grafLumbre = new Chart(ctxLum, {
-        type: 'bar',
-        data: {
-          labels: ['Origen Lumbre'],
-          datasets: [
-            { label: 'Ingresos', data: [calc.lumbreIng], backgroundColor: '#f59e0b' },
-            { label: 'Gastos', data: [calc.lumbreGas], backgroundColor: '#ef4444' }
-          ]
-        },
-        options: { responsive: true, maintainAspectRatio: false }
-      });
-    }
-
-    function renderizarTablas() {
-      // Navidad
-      document.getElementById('tablaInvNavidad').innerHTML = datos.invNavidad.map(p => `
-        <tr>
-          <td class="p-3 font-bold">${p.nombre}</td>
-          <td class="p-3">${formatoMoneda(p.costo)}</td>
-          <td class="p-3 text-emerald-600 font-bold">${formatoMoneda(p.precio)}</td>
-          <td class="p-3 font-bold">${p.stock}</td>
-          <td class="p-3 text-right"><button onclick="eliminarItem('invNavidad', ${p.id})" class="text-rose-500"><i class="fa-solid fa-trash"></i></button></td>
-        </tr>`).join('');
-
-      // Lumbre (Solo si esta desbloqueado)
-      if (lumbreDesbloqueado) {
-        document.getElementById('tablaInvLumbre').innerHTML = datos.invLumbre.map(p => `
-          <tr>
-            <td class="p-3 font-bold">${p.nombre}</td>
-            <td class="p-3">${formatoMoneda(p.costo)}</td>
-            <td class="p-3 text-emerald-600 font-bold">${formatoMoneda(p.precio)}</td>
-            <td class="p-3 font-bold">${p.stock}</td>
-            <td class="p-3 text-right"><button onclick="eliminarItem('invLumbre', ${p.id})" class="text-rose-500"><i class="fa-solid fa-trash"></i></button></td>
-          </tr>`).join('');
-      } else {
-        document.getElementById('tablaInvLumbre').innerHTML = `<tr><td colspan="5" class="p-4 text-center text-slate-400">Ingresa el PIN para consultar este inventario.</td></tr>`;
-      }
-
-      // Herramientas (Público)
-      document.getElementById('tablaHerramientas').innerHTML = datos.invHerramientas.map(p => `
-        <tr>
-          <td class="p-3 font-bold">${p.nombre}</td>
-          <td class="p-3">${p.categoria}</td>
-          <td class="p-3">${formatoMoneda(p.costo)}</td>
-          <td class="p-3">${p.cantidad}</td>
-          <td class="p-3 text-right"><button onclick="eliminarItem('invHerramientas', ${p.id})" class="text-rose-500"><i class="fa-solid fa-trash"></i></button></td>
-        </tr>`).join('');
-
-      // Movimientos
-      const movFiltrados = datos.movimientos.filter(m => lumbreDesbloqueado || m.cuenta !== 'Origen Lumbre');
-      document.getElementById('tablaMovimientos').innerHTML = movFiltrados.map(m => `
-        <tr>
-          <td class="p-3 text-slate-400">${m.fecha}</td>
-          <td class="p-3 font-bold ${m.tipo === 'Ingreso' ? 'text-emerald-600' : 'text-rose-600'}">${m.tipo}</td>
-          <td class="p-3">${m.cuenta}</td>
-          <td class="p-3">${m.descripcion}</td>
-          <td class="p-3 text-right font-bold">${formatoMoneda(m.monto)}</td>
-        </tr>`).join('');
     }
 
     function cargarSelectProductosVenta() {
-      const origen = document.getElementById('ventaOrigen').value;
-      const select = document.getElementById('ventaProducto');
-
-      if (origen === 'Origen Lumbre' && !lumbreDesbloqueado) {
-        intentarAccesoLumbre('ventas');
-        select.innerHTML = '<option value="">-- Requiere PIN --</option>';
-        return;
-      }
-
-      const lista = origen === 'Navidad' ? datos.invNavidad : datos.invLumbre;
+      const cat = document.getElementById('ventaCat').value;
+      const select = document.getElementById('ventaProdId');
+      const prods = datos.productos.filter(p => p.categoria === cat);
       select.innerHTML = '<option value="">-- Seleccionar --</option>' + 
-        lista.map(p => `<option value="${p.id}">${p.nombre} (Stock: ${p.stock})</option>`).join('');
+        prods.map(p => `<option value="${p.id}">${p.nombre} (Stock: ${p.stock})</option>`).join('');
     }
 
-    function actualizarPrecioSugerido() {
-      const origen = document.getElementById('ventaOrigen').value;
-      const id = document.getElementById('ventaProducto').value;
-      const lista = origen === 'Navidad' ? datos.invNavidad : datos.invLumbre;
-      const prod = lista.find(p => p.id == id);
+    function actualizarPrecioVenta() {
+      const id = document.getElementById('ventaProdId').value;
+      const prod = datos.productos.find(p => p.id == id);
       if (prod) document.getElementById('ventaPrecio').value = prod.precio;
     }
 
     function guardarVenta(e) {
       e.preventDefault();
-      const origen = document.getElementById('ventaOrigen').value;
-      if (origen === 'Origen Lumbre' && !lumbreDesbloqueado) {
-        alert('Debes ingresar el PIN para registrar ventas de Origen Lumbre');
-        return;
-      }
-
-      const id = document.getElementById('ventaProducto').value;
-      const lista = origen === 'Navidad' ? datos.invNavidad : datos.invLumbre;
-      const prod = lista.find(p => p.id == id);
+      const id = document.getElementById('ventaProdId').value;
+      const prod = datos.productos.find(p => p.id == id);
       const cant = parseInt(document.getElementById('ventaCantidad').value);
       const precio = parseFloat(document.getElementById('ventaPrecio').value);
-      const cliente = document.getElementById('ventaCliente').value;
+      const cliente = document.getElementById('ventaCliente').value.trim();
 
       if (!prod || cant > prod.stock) {
-        alert('Stock insuficiente o no seleccionado');
+        alert('Stock insuficiente o producto no seleccionado.');
         return;
       }
 
       prod.stock -= cant;
-      datos.movimientos.unshift({
+      const ventaMonto = precio * cant;
+
+      ultimaVentaRegistrada = {
         id: Date.now(),
         fecha: new Date().toISOString().split('T')[0],
-        tipo: 'Ingreso',
-        cuenta: origen,
-        descripcion: `Venta: ${prod.nombre} x${cant} (${cliente || 'Varios'})`,
-        monto: precio * cant
-      });
+        categoria: prod.categoria,
+        productoNombre: prod.nombre,
+        costo: prod.costo,
+        cantidad: cant,
+        monto: ventaMonto,
+        cliente: cliente
+      };
 
+      datos.movimientos.unshift(ultimaVentaRegistrada);
       guardarYActualizar();
-      document.getElementById('formVenta').reset();
-      alert('¡Venta registrada exitosamente!');
-      cambiarPestana(origen === 'Navidad' ? 'dash-navidad' : 'dash-lumbre');
+
+      document.getElementById('contenedorBotonPostal').classList.remove('hidden');
+      alert('¡Venta registrada con éxito!');
     }
 
-    function guardarProductoNavidad(e) {
+    function abrirModalPostal() {
+      if (!ultimaVentaRegistrada) return;
+
+      const nombreCliente = ultimaVentaRegistrada.cliente ? ultimaVentaRegistrada.cliente : 'Cliente especial';
+      document.getElementById('postalSaludo').textContent = `Hola, ${nombreCliente}:`;
+      document.getElementById('postalFecha').textContent = ultimaVentaRegistrada.fecha;
+
+      abrirModal('modalPostal');
+    }
+
+    function descargarPostalPNG() {
+      const el = document.getElementById('postalRenderArea');
+      const btnPNG = document.getElementById('btnDescargarPNG');
+      btnPNG.disabled = true;
+      btnPNG.textContent = 'Generando...';
+
+      html2canvas(el, { scale: 3, useCORS: true }).then(canvas => {
+        const link = document.createElement('a');
+        link.download = `Postal_Navidena_Mate_y_Lau_${Date.now()}.png`;
+        link.href = canvas.toDataURL('image/png');
+        link.click();
+
+        btnPNG.disabled = false;
+        btnPNG.innerHTML = '<i class="fa-solid fa-image"></i> Descargar PNG';
+      }).catch(() => {
+        btnPNG.disabled = false;
+        btnPNG.innerHTML = '<i class="fa-solid fa-image"></i> Descargar PNG';
+      });
+    }
+
+    function descargarPostalPDF() {
+      const el = document.getElementById('postalRenderArea');
+      const btnPDF = document.getElementById('btnDescargarPDF');
+      btnPDF.disabled = true;
+
+      html2canvas(el, { scale: 2 }).then(canvas => {
+        const imgData = canvas.toDataURL('image/png');
+        const { jsPDF } = window.jspdf;
+        const pdf = new jsPDF('p', 'mm', 'a5');
+        const pdfWidth = pdf.internal.pageSize.getWidth();
+        const pdfHeight = (canvas.height * pdfWidth) / canvas.width;
+        
+        pdf.addImage(imgData, 'PNG', 0, 0, pdfWidth, pdfHeight);
+        pdf.save(`Postal_Navidena_Mate_y_Lau_${Date.now()}.pdf`);
+
+        btnPDF.disabled = false;
+      }).catch(() => {
+        btnPDF.disabled = false;
+      });
+    }
+
+    function guardarGastoCaja(e) {
       e.preventDefault();
-      datos.invNavidad.push({
+      datos.gastosCaja.unshift({
         id: Date.now(),
-        nombre: document.getElementById('pnNombre').value,
-        costo: parseFloat(document.getElementById('pnCosto').value),
-        precio: parseFloat(document.getElementById('pnPrecio').value),
-        stock: parseInt(document.getElementById('pnStock').value)
+        fecha: new Date().toISOString().split('T')[0],
+        categoria: document.getElementById('gastoCat').value,
+        concepto: document.getElementById('gastoConcepto').value,
+        monto: parseFloat(document.getElementById('gastoMonto').value)
       });
       guardarYActualizar();
-      cerrarModal('modalProductoNavidad');
+      alert('Gasto registrado.');
+      cambiarPestana('dashboard');
     }
 
-    function guardarProductoLumbre(e) {
-      e.preventDefault();
-      if (!lumbreDesbloqueado) {
-        alert('Debes ingresar el PIN');
-        return;
+    function renderizarInventario() {
+      const busqueda = document.getElementById('invBuscar').value.toLowerCase();
+      const filtro = document.getElementById('invFiltroCat').value;
+
+      const prods = datos.productos.filter(p => {
+        return (filtro === 'Todos' || p.categoria === filtro) && p.nombre.toLowerCase().includes(busqueda);
+      });
+
+      document.getElementById('tablaInventario').innerHTML = prods.map(p => `
+        <tr>
+          <td class="p-3 font-bold">${p.nombre}</td>
+          <td class="p-3"><span class="px-2 py-0.5 rounded text-[10px] font-bold ${p.categoria === 'Navidad' ? 'bg-rose-100 text-rose-700' : 'bg-amber-100 text-amber-700'}">${p.categoria}</span></td>
+          <td class="p-3">${formatoMoneda(p.costo)}</td>
+          <td class="p-3 font-bold text-emerald-600">${formatoMoneda(p.precio)}</td>
+          <td class="p-3 font-bold">${p.stock}</td>
+          <td class="p-3 text-right space-x-2">
+            <button onclick="editarProducto(${p.id})" class="text-blue-600"><i class="fa-solid fa-pen-to-square"></i></button>
+            <button onclick="eliminarProducto(${p.id})" class="text-rose-500"><i class="fa-solid fa-trash"></i></button>
+          </td>
+        </tr>`).join('');
+    }
+
+    function prepararModalProducto() {
+      document.getElementById('prodEditId').value = '';
+      document.getElementById('prodNombre').value = '';
+      document.getElementById('prodCosto').value = '';
+      document.getElementById('prodPrecio').value = '';
+      document.getElementById('prodStock').value = '';
+      document.getElementById('modalProductoTitulo').textContent = "Nuevo Producto";
+      abrirModal('modalProducto');
+    }
+
+    function editarProducto(id) {
+      const p = datos.productos.find(item => item.id === id);
+      if (p) {
+        document.getElementById('prodEditId').value = p.id;
+        document.getElementById('prodNombre').value = p.nombre;
+        document.getElementById('prodCategoria').value = p.categoria;
+        document.getElementById('prodCosto').value = p.costo;
+        document.getElementById('prodPrecio').value = p.precio;
+        document.getElementById('prodStock').value = p.stock;
+        document.getElementById('modalProductoTitulo').textContent = "Editar Producto";
+        abrirModal('modalProducto');
       }
-      datos.invLumbre.push({
-        id: Date.now(),
-        nombre: document.getElementById('plNombre').value,
-        costo: parseFloat(document.getElementById('plCosto').value),
-        precio: parseFloat(document.getElementById('plPrecio').value),
-        stock: parseInt(document.getElementById('plStock').value)
-      });
-      guardarYActualizar();
-      cerrarModal('modalProductoLumbre');
     }
 
-    function guardarHerramienta(e) {
+    function guardarProductoModal(e) {
       e.preventDefault();
-      datos.invHerramientas.push({
-        id: Date.now(),
-        nombre: document.getElementById('phNombre').value,
-        categoria: document.getElementById('phCategoria').value,
-        costo: parseFloat(document.getElementById('phCosto').value),
-        cantidad: parseInt(document.getElementById('phCantidad').value)
+      const editId = document.getElementById('prodEditId').value;
+      const nombre = document.getElementById('prodNombre').value;
+      const categoria = document.getElementById('prodCategoria').value;
+      const costo = parseFloat(document.getElementById('prodCosto').value);
+      const precio = parseFloat(document.getElementById('prodPrecio').value);
+      const stock = parseInt(document.getElementById('prodStock').value);
+
+      if (editId) {
+        const p = datos.productos.find(item => item.id == editId);
+        if (p) Object.assign(p, { nombre, categoria, costo, precio, stock });
+      } else {
+        datos.productos.push({ id: Date.now(), nombre, categoria, costo, precio, stock });
+      }
+      guardarYActualizar();
+      cerrarModal('modalProducto');
+    }
+
+    function procesarPlanoMasivo() {
+      const txt = document.getElementById('txtPlano').value.trim();
+      if (!txt) return;
+      const lineas = txt.split('\n');
+      lineas.forEach(l => {
+        const partes = l.split(',');
+        if (partes.length >= 5) {
+          datos.productos.push({
+            id: Date.now() + Math.random(),
+            nombre: partes[0].trim(),
+            categoria: partes[1].trim(),
+            costo: parseFloat(partes[2].trim()) || 0,
+            precio: parseFloat(partes[3].trim()) || 0,
+            stock: parseInt(partes[4].trim()) || 0
+          });
+        }
       });
       guardarYActualizar();
-      cerrarModal('modalHerramienta');
+      cerrarModal('modalPlano');
+      alert('¡Carga masiva completada!');
+    }
+
+    function exportarExcel() {
+      let csv = "Nombre,Categoria,Costo,Precio,Stock\n";
+      datos.productos.forEach(p => {
+        csv += `"${p.nombre}","${p.categoria}",${p.costo},${p.precio},${p.stock}\n`;
+      });
+      const blob = new Blob([csv], { type: 'text/csv' });
+      const a = document.createElement('a');
+      a.href = URL.createObjectURL(blob);
+      a.download = 'Inventario_Mate_y_Lau.csv';
+      a.click();
+    }
+
+    function renderizarHistorial() {
+      const filtro = document.getElementById('histFiltroCat').value;
+      const movs = datos.movimientos.filter(m => filtro === 'Todos' || m.categoria === filtro);
+
+      document.getElementById('tablaHistorial').innerHTML = movs.map(m => `
+        <tr>
+          <td class="p-3 text-slate-400">${m.fecha}</td>
+          <td class="p-3 font-bold text-emerald-600">Venta</td>
+          <td class="p-3">${m.categoria}</td>
+          <td class="p-3">Venta: ${m.productoNombre} x${m.cantidad} (${m.cliente ? m.cliente : 'Cliente general'})</td>
+          <td class="p-3 text-right font-bold">${formatoMoneda(m.monto)}</td>
+          <td class="p-3 text-right"><button onclick="eliminarMovimiento(${m.id})" class="text-rose-500"><i class="fa-solid fa-trash"></i></button></td>
+        </tr>`).join('');
+    }
+
+    function eliminarMovimiento(id) {
+      if (confirm('¿Eliminar registro?')) {
+        datos.movimientos = datos.movimientos.filter(m => m.id !== id);
+        guardarYActualizar();
+      }
+    }
+
+    function eliminarProducto(id) {
+      if (confirm('¿Eliminar producto?')) {
+        datos.productos = datos.productos.filter(p => p.id !== id);
+        guardarYActualizar();
+      }
     }
 
     function guardarNuevasCredenciales(e) {
       e.preventDefault();
+      const actual = document.getElementById('cfgActual').value;
+      if (actual !== credenciales.pass && actual !== credenciales.pin) {
+        alert('La clave o PIN actual ingresado es incorrecto.');
+        return;
+      }
       credenciales.user = document.getElementById('cfgUsuario').value.trim();
       credenciales.pass = document.getElementById('cfgPassword').value.trim();
       credenciales.pin = document.getElementById('cfgPin').value.trim();
-      localStorage.setItem('CF_CREDENCIALES', JSON.stringify(credenciales));
+      localStorage.setItem('CF_CREDENCIALES_V4', JSON.stringify(credenciales));
       alert('¡Credenciales actualizadas correctamente!');
-    }
-
-    function guardarApiUrl() {
-      const url = document.getElementById('apiScriptUrl').value.trim();
-      if (url) {
-        localStorage.setItem('SCRIPT_API_URL', url);
-        scriptApiUrl = url;
-        alert('URL guardada correctamente!');
-        inicializarApp();
-      }
-    }
-
-    function eliminarItem(tabla, id) {
-      if (confirm('¿Deseas eliminar este registro?')) {
-        datos[tabla] = datos[tabla].filter(p => p.id !== id);
-        guardarYActualizar();
-      }
+      document.getElementById('cfgActual').value = '';
     }
 
     function abrirModal(id) { document.getElementById(id).classList.remove('hidden'); }
