@@ -359,20 +359,18 @@
 
     </main>
 
-    <!-- MODAL POSTAL NAVIDEÑA (TEXTO REPETIDO CORREGIDO Y SEPARADO) -->
+    <!-- MODAL POSTAL NAVIDEÑA -->
     <div id="modalPostal" class="fixed inset-0 bg-slate-900/85 backdrop-blur-md hidden flex justify-center items-center p-4 z-50 overflow-y-auto">
       <div class="flex flex-col items-center max-w-md w-full space-y-4 my-auto">
         
         <!-- LIENZO DE LA POSTAL -->
         <div id="postalRenderArea" class="postal-bg-container rounded-2xl shadow-2xl relative text-center text-[#21110b] flex flex-col justify-between overflow-hidden p-6">
           
-          <!-- Encabezado con firma limpia y corazón -->
           <div class="pt-12 flex flex-col items-center">
             <h1 class="font-script text-5xl text-[#6d181c] leading-none mb-1">Mate y Lau</h1>
             <p class="text-[#6d181c] text-xs">♥</p>
           </div>
 
-          <!-- Bloque Central -->
           <div class="space-y-3 my-auto py-2">
             <h2 class="font-script text-4xl text-[#6d181c] leading-none my-1">¡Gracias por tu compra!</h2>
 
@@ -387,7 +385,6 @@
             </div>
           </div>
 
-          <!-- Pie de Página (Frase reemplazada a UNA NAVIDAD LLENA DE DETALLES) -->
           <div class="pb-3 flex flex-col items-center">
             <div class="flex items-center justify-center gap-2 text-[#c5a059] mb-2">
               <div class="h-[1px] w-8 bg-[#c5a059]/50"></div>
@@ -488,8 +485,8 @@
       pin: "1234"
     };
 
-    // BASE DE DATOS NUBE GOOGLE FIREBASE EN TIEMPO REAL
-    const FIREBASE_DB_URL = 'https://control-mate-y-lau-default-rtdb.firebaseio.com/datos.json';
+    // BASE DE DATOS NUBE GOOGLE FIREBASE EN TIEMPO REAL (CORREGIDA)
+    const FIREBASE_DB_URL = 'https://control-mate-y-lau-84d9c-default-rtdb.firebaseio.com/datos.json';
 
     let lumbreDesbloqueado = false;
     let ultimaVentaRegistrada = null;
@@ -538,7 +535,6 @@
       document.getElementById('cfgPassword').value = credenciales.pass;
       document.getElementById('cfgPin').value = credenciales.pin;
       
-      // Sincronizar automáticamente desde Google Firebase
       sincronizarDesdeNube();
     }
 
@@ -577,7 +573,6 @@
       renderizarHistorial();
       cargarSelectProductosVenta();
 
-      // Guardar inmediatamente en la Nube
       const statusEl = document.getElementById('syncStatus');
       statusEl.textContent = '(Guardando en la nube...)';
       statusEl.className = "text-[9px] text-amber-300 font-bold ml-1";
@@ -610,12 +605,12 @@
           datos = data;
           localStorage.setItem('SISTEMA_FINANCIERO_DATOS_V4', JSON.stringify(datos));
         }
-        statusEl.textContent = '(Sincronizado en Nube 👌)';
-        statusEl.className = "text-[9px] text-emerald-400 font-bold ml-1";
         renderizarDashboard();
         renderizarInventario();
         renderizarHistorial();
         cargarSelectProductosVenta();
+        statusEl.textContent = '(Sincronizado en Nube 👌)';
+        statusEl.className = "text-[9px] text-emerald-400 font-bold ml-1";
       })
       .catch(() => {
         statusEl.textContent = '(Modo Local)';
@@ -627,254 +622,285 @@
       });
     }
 
-    function cambiarPestana(id) {
-      document.querySelectorAll('section').forEach(s => s.classList.add('hidden'));
-      document.querySelectorAll('.tab-btn').forEach(b => b.classList.remove('active'));
-      document.getElementById('sec-' + id).classList.remove('hidden');
-      document.getElementById('tab-' + id).classList.add('active');
-      
-      // Auto-actualizar al navegar entre pestañas
-      sincronizarDesdeNube();
+    // Funciones de UI y lógica de la aplicación
+    function cambiarPestana(pestana) {
+      ['dashboard', 'ventas', 'gastos-caja', 'inventario', 'historial', 'config'].forEach(p => {
+        document.getElementById('sec-' + p).classList.add('hidden');
+        document.getElementById('tab-' + p).classList.remove('active');
+      });
+      document.getElementById('sec-' + pestana).classList.remove('hidden');
+      document.getElementById('tab-' + pestana).classList.add('active');
     }
 
-    function formatoMoneda(v) {
-      return new Intl.NumberFormat('es-CO', { style: 'currency', currency: 'COP', maximumFractionDigits: 0 }).format(v);
+    function abrirModal(id) { document.getElementById(id).classList.remove('hidden'); }
+    function cerrarModal(id) { document.getElementById(id).classList.add('hidden'); }
+
+    function guardarVenta(e) {
+      e.preventDefault();
+      const cat = document.getElementById('ventaCat').value;
+      const prodId = parseInt(document.getElementById('ventaProdId').value);
+      const precio = parseFloat(document.getElementById('ventaPrecio').value);
+      const cantidad = parseInt(document.getElementById('ventaCantidad').value);
+      const cliente = document.getElementById('ventaCliente').value || 'Cliente General';
+
+      const producto = datos.productos.find(p => p.id === prodId);
+      if (!producto) return;
+
+      if (producto.stock < cantidad) {
+        alert('Stock insuficiente');
+        return;
+      }
+
+      producto.stock -= cantidad;
+      const total = precio * cantidad;
+
+      const movimiento = {
+        id: Date.now(),
+        fecha: new Date().toISOString().split('T')[0],
+        tipo: 'Venta',
+        categoria: cat,
+        descripcion: `${producto.nombre} (x${cantidad}) - Cliente: ${cliente}`,
+        monto: total,
+        costoTotal: producto.costo * cantidad
+      };
+
+      datos.movimientos.push(movimiento);
+      ultimaVentaRegistrada = movimiento;
+
+      if (cat === 'Navidad') {
+        document.getElementById('contenedorBotonPostal').classList.remove('hidden');
+      } else {
+        document.getElementById('contenedorBotonPostal').classList.add('hidden');
+      }
+
+      guardarYActualizar();
+      e.target.reset();
+      alert('¡Venta registrada con éxito!');
+    }
+
+    function guardarGastoCaja(e) {
+      e.preventDefault();
+      const cat = document.getElementById('gastoCat').value;
+      const concepto = document.getElementById('gastoConcepto').value;
+      const monto = parseFloat(document.getElementById('gastoMonto').value);
+
+      const gasto = {
+        id: Date.now(),
+        fecha: new Date().toISOString().split('T')[0],
+        tipo: 'Gasto Caja',
+        categoria: cat,
+        descripcion: concepto,
+        monto: monto
+      };
+
+      datos.gastosCaja.push(gasto);
+      guardarYActualizar();
+      e.target.reset();
+      alert('Gasto registrado con éxito');
+    }
+
+    function cargarSelectProductosVenta() {
+      const cat = document.getElementById('ventaCat').value;
+      const select = document.getElementById('ventaProdId');
+      select.innerHTML = '<option value="">-- Seleccionar --</option>';
+      
+      datos.productos.filter(p => p.categoria === cat).forEach(p => {
+        select.innerHTML += `<option value="${p.id}">${p.nombre} (Stock: ${p.stock})</option>`;
+      });
+      actualizarPrecioVenta();
+    }
+
+    function actualizarPrecioVenta() {
+      const prodId = parseInt(document.getElementById('ventaProdId').value);
+      const producto = datos.productos.find(p => p.id === prodId);
+      if (producto) {
+        document.getElementById('ventaPrecio').value = producto.precio;
+      } else {
+        document.getElementById('ventaPrecio').value = '';
+      }
+    }
+
+    function renderizarInventario() {
+      const buscar = document.getElementById('invBuscar').value.toLowerCase();
+      const filtroCat = document.getElementById('invFiltroCat').value;
+      const tbody = document.getElementById('tablaInventario');
+      tbody.innerHTML = '';
+
+      let filtrados = datos.productos.filter(p => {
+        const coincideTexto = p.nombre.toLowerCase().includes(buscar);
+        const coincideCat = filtroCat === 'Todos' || p.categoria === filtroCat;
+        return coincideTexto && coincideCat;
+      });
+
+      filtrados.forEach(p => {
+        tbody.innerHTML += `
+          <tr class="hover:bg-slate-50">
+            <td class="p-3 font-medium text-slate-800">${p.nombre}</td>
+            <td class="p-3 text-slate-500">${p.categoria}</td>
+            <td class="p-3">$${p.costo.toLocaleString()}</td>
+            <td class="p-3 font-bold text-emerald-600">$${p.precio.toLocaleString()}</td>
+            <td class="p-3">${p.stock}</td>
+            <td class="p-3 text-right space-x-2">
+              <button onclick="editarProducto(${p.id})" class="text-blue-600 hover:underline"><i class="fa-solid fa-pen"></i></button>
+              <button onclick="eliminarProducto(${p.id})" class="text-rose-600 hover:underline"><i class="fa-solid fa-trash"></i></button>
+            </td>
+          </tr>`;
+      });
+    }
+
+    function renderizarHistorial() {
+      const filtroCat = document.getElementById('histFiltroCat').value;
+      const tbody = document.getElementById('tablaHistorial');
+      tbody.innerHTML = '';
+
+      let todosOps = [
+        ...datos.movimientos.map(m => ({ ...m, tipoOp: 'Venta' })),
+        ...datos.gastosCaja.map(g => ({ ...g, tipoOp: 'Gasto' }))
+      ].sort((a, b) => b.id - a.id);
+
+      if (filtroCat !== 'Todos') {
+        todosOps = todosOps.filter(o => o.categoria === filtroCat);
+      }
+
+      todosOps.forEach(op => {
+        const esVenta = op.tipoOp === 'Venta';
+        tbody.innerHTML += `
+          <tr class="hover:bg-slate-50">
+            <td class="p-3 text-slate-500">${op.fecha}</td>
+            <td class="p-3"><span class="px-2 py-0.5 rounded text-[10px] font-bold ${esVenta ? 'bg-emerald-100 text-emerald-700' : 'bg-rose-100 text-rose-700'}">${op.tipo}</span></td>
+            <td class="p-3 text-slate-500">${op.categoria}</td>
+            <td class="p-3 text-slate-800">${op.descripcion}</td>
+            <td class="p-3 text-right font-bold ${esVenta ? 'text-emerald-600' : 'text-rose-600'}">$${op.monto.toLocaleString()}</td>
+            <td class="p-3 text-right"><button onclick="eliminarOperacion(${op.id}, '${op.tipoOp}')" class="text-rose-500 hover:underline"><i class="fa-solid fa-trash"></i></button></td>
+          </tr>`;
+      });
     }
 
     function renderizarDashboard() {
       const filtro = document.getElementById('dashFiltro').value;
+      let movs = datos.movimientos;
+      let gastos = datos.gastosCaja;
+
+      if (filtro !== 'Todos') {
+        movs = movs.filter(m => m.categoria === filtro);
+        gastos = gastos.filter(g => g.categoria === filtro);
+      }
+
       const hoy = new Date().toISOString().split('T')[0];
       const mesActual = hoy.substring(0, 7);
 
-      let vDia = 0, vMes = 0, vCosto = 0, vTotal = 0, gCaja = 0;
+      const ventasDia = movs.filter(m => m.fecha === hoy).reduce((acc, m) => acc + m.monto, 0);
+      const ventasMes = movs.filter(m => m.fecha.startsWith(mesActual)).reduce((acc, m) => acc + m.monto, 0);
+      const ventasCosto = movs.reduce((acc, m) => acc + (m.costoTotal || 0), 0);
+      const gananciaBruta = movs.reduce((acc, m) => acc + (m.monto - (m.costoTotal || 0)), 0);
+      
+      const totalInvertido = datos.productos.reduce((acc, p) => acc + (p.costo * p.stock), 0);
+      const totalGastosCaja = gastos.reduce((acc, g) => acc + g.monto, 0);
+      const utilidadLimpia = gananciaBruta - totalGastosCaja;
 
-      (datos.movimientos || []).filter(m => m.categoria === filtro).forEach(m => {
-        vTotal += m.monto;
-        vCosto += m.costo * m.cantidad;
-        if (m.fecha === hoy) vDia += m.monto;
-        if (m.fecha.startsWith(mesActual)) vMes += m.monto;
-      });
+      document.getElementById('dashVentasDia').textContent = `$${ventasDia.toLocaleString()}`;
+      document.getElementById('dashVentasMes').textContent = `$${ventasMes.toLocaleString()}`;
+      document.getElementById('dashVentasCosto').textContent = `$${ventasCosto.toLocaleString()}`;
+      document.getElementById('dashGananciaNeta').textContent = `$${gananciaBruta.toLocaleString()}`;
+      document.getElementById('dashTotalInvertido').textContent = `$${totalInvertido.toLocaleString()}`;
+      document.getElementById('dashTotalGastosCaja').textContent = `$${totalGastosCaja.toLocaleString()}`;
+      document.getElementById('dashUtilidadLimpia').textContent = `$${utilidadLimpia.toLocaleString()}`;
 
-      (datos.gastosCaja || []).filter(g => g.categoria === filtro).forEach(g => {
-        gCaja += g.monto;
-      });
+      renderizarGrafico(movs, gastos);
+    }
 
-      let totalInv = (datos.productos || []).filter(p => p.categoria === filtro).reduce((acc, p) => acc + (p.costo * p.stock), 0);
-      let gananciaNetaBruta = vTotal - vCosto;
-      let utilidadLimpia = gananciaNetaBruta - gCaja;
-
-      document.getElementById('dashVentasDia').textContent = formatoMoneda(vDia);
-      document.getElementById('dashVentasMes').textContent = formatoMoneda(vMes);
-      document.getElementById('dashVentasCosto').textContent = formatoMoneda(vCosto);
-      document.getElementById('dashGananciaNeta').textContent = formatoMoneda(gananciaNetaBruta);
-
-      document.getElementById('dashTotalInvertido').textContent = formatoMoneda(totalInv);
-      document.getElementById('dashTotalGastosCaja').textContent = formatoMoneda(gCaja);
-      document.getElementById('dashUtilidadLimpia').textContent = formatoMoneda(utilidadLimpia);
-
+    function renderizarGrafico(movs, gastos) {
       const ctx = document.getElementById('graficoDashboard').getContext('2d');
       if (miGrafico) miGrafico.destroy();
+
       miGrafico = new Chart(ctx, {
         type: 'bar',
         data: {
-          labels: ['Ventas Totales', 'Inversión / Costos', 'Gastos Caja', 'Utilidad Limpia'],
+          labels: ['Ventas Totales', 'Costo de Ventas', 'Gastos Caja', 'Utilidad Real'],
           datasets: [{
-            label: filtro,
-            data: [vTotal, vCosto, gCaja, utilidadLimpia],
-            backgroundColor: ['#10b981', '#f59e0b', '#ef4444', '#3b82f6']
+            label: 'Monto ($)',
+            data: [
+              movs.reduce((a, b) => a + b.monto, 0),
+              movs.reduce((a, b) => a + (b.costoTotal || 0), 0),
+              gastos.reduce((a, b) => a + b.monto, 0),
+              movs.reduce((a, b) => a + (b.monto - (b.costoTotal || 0)), 0) - gastos.reduce((a, b) => a + b.monto, 0)
+            ],
+            backgroundColor: ['#10b981', '#f59e0b', '#f43f5e', '#3b82f6']
           }]
         },
         options: { responsive: true, maintainAspectRatio: false }
       });
     }
 
-    function cargarSelectProductosVenta() {
-      const cat = document.getElementById('ventaCat').value;
-      const select = document.getElementById('ventaProdId');
-      const prods = (datos.productos || []).filter(p => p.categoria === cat);
-      select.innerHTML = '<option value="">-- Seleccionar --</option>' + 
-        prods.map(p => `<option value="${p.id}">${p.nombre} (Stock: ${p.stock})</option>`).join('');
-    }
-
-    function actualizarPrecioVenta() {
-      const id = document.getElementById('ventaProdId').value;
-      const prod = (datos.productos || []).find(p => p.id == id);
-      if (prod) document.getElementById('ventaPrecio').value = prod.precio;
-    }
-
-    function guardarVenta(e) {
-      e.preventDefault();
-      const id = document.getElementById('ventaProdId').value;
-      const prod = (datos.productos || []).find(p => p.id == id);
-      const cant = parseInt(document.getElementById('ventaCantidad').value);
-      const precio = parseFloat(document.getElementById('ventaPrecio').value);
-      const cliente = document.getElementById('ventaCliente').value.trim();
-
-      if (!prod || cant > prod.stock) {
-        alert('Stock insuficiente o producto no seleccionado.');
-        return;
-      }
-
-      prod.stock -= cant;
-      const ventaMonto = precio * cant;
-
-      ultimaVentaRegistrada = {
-        id: Date.now(),
-        fecha: new Date().toISOString().split('T')[0],
-        categoria: prod.categoria,
-        productoNombre: prod.nombre,
-        costo: prod.costo,
-        cantidad: cant,
-        monto: ventaMonto,
-        cliente: cliente
-      };
-
-      if(!datos.movimientos) datos.movimientos = [];
-      datos.movimientos.unshift(ultimaVentaRegistrada);
-      guardarYActualizar();
-
-      document.getElementById('contenedorBotonPostal').classList.remove('hidden');
-      alert('¡Venta registrada con éxito!');
-    }
-
-    function abrirModalPostal() {
-      if (!ultimaVentaRegistrada) return;
-
-      const nombreCliente = ultimaVentaRegistrada.cliente ? ultimaVentaRegistrada.cliente : 'Cliente especial';
-      document.getElementById('postalSaludo').textContent = `Hola, ${nombreCliente}:`;
-      document.getElementById('postalFecha').textContent = ultimaVentaRegistrada.fecha;
-
-      abrirModal('modalPostal');
-    }
-
-    function descargarPostalPNG() {
-      const el = document.getElementById('postalRenderArea');
-      const btnPNG = document.getElementById('btnDescargarPNG');
-      btnPNG.disabled = true;
-      btnPNG.textContent = 'Generando...';
-
-      html2canvas(el, { scale: 3, useCORS: true }).then(canvas => {
-        const link = document.createElement('a');
-        link.download = `Postal_Navidena_Mate_y_Lau_${Date.now()}.png`;
-        link.href = canvas.toDataURL('image/png');
-        link.click();
-
-        btnPNG.disabled = false;
-        btnPNG.innerHTML = '<i class="fa-solid fa-image"></i> Descargar PNG';
-      }).catch(() => {
-        btnPNG.disabled = false;
-        btnPNG.innerHTML = '<i class="fa-solid fa-image"></i> Descargar PNG';
-      });
-    }
-
-    function descargarPostalPDF() {
-      const el = document.getElementById('postalRenderArea');
-      const btnPDF = document.getElementById('btnDescargarPDF');
-      btnPDF.disabled = true;
-
-      html2canvas(el, { scale: 2 }).then(canvas => {
-        const imgData = canvas.toDataURL('image/png');
-        const { jsPDF } = window.jspdf;
-        const pdf = new jsPDF('p', 'mm', 'a5');
-        const pdfWidth = pdf.internal.pageSize.getWidth();
-        const pdfHeight = (canvas.height * pdfWidth) / canvas.width;
-        
-        pdf.addImage(imgData, 'PNG', 0, 0, pdfWidth, pdfHeight);
-        pdf.save(`Postal_Navidena_Mate_y_Lau_${Date.now()}.pdf`);
-
-        btnPDF.disabled = false;
-      }).catch(() => {
-        btnPDF.disabled = false;
-      });
-    }
-
-    function guardarGastoCaja(e) {
-      e.preventDefault();
-      if(!datos.gastosCaja) datos.gastosCaja = [];
-      datos.gastosCaja.unshift({
-        id: Date.now(),
-        fecha: new Date().toISOString().split('T')[0],
-        categoria: document.getElementById('gastoCat').value,
-        concepto: document.getElementById('gastoConcepto').value,
-        monto: parseFloat(document.getElementById('gastoMonto').value)
-      });
-      guardarYActualizar();
-      alert('Gasto registrado con éxito.');
-      cambiarPestana('historial');
-    }
-
-    function renderizarInventario() {
-      const busqueda = document.getElementById('invBuscar').value.toLowerCase();
-      const filtro = document.getElementById('invFiltroCat').value;
-
-      const prods = (datos.productos || []).filter(p => {
-        return (filtro === 'Todos' || p.categoria === filtro) && p.nombre.toLowerCase().includes(busqueda);
-      });
-
-      document.getElementById('tablaInventario').innerHTML = prods.map(p => `
-        <tr>
-          <td class="p-3 font-bold">${p.nombre}</td>
-          <td class="p-3"><span class="px-2 py-0.5 rounded text-[10px] font-bold ${p.categoria === 'Navidad' ? 'bg-rose-100 text-rose-700' : 'bg-amber-100 text-amber-700'}">${p.categoria}</span></td>
-          <td class="p-3">${formatoMoneda(p.costo)}</td>
-          <td class="p-3 font-bold text-emerald-600">${formatoMoneda(p.precio)}</td>
-          <td class="p-3 font-bold">${p.stock}</td>
-          <td class="p-3 text-right space-x-2">
-            <button onclick="editarProducto(${p.id})" class="text-blue-600"><i class="fa-solid fa-pen-to-square"></i></button>
-            <button onclick="eliminarProducto(${p.id})" class="text-rose-500"><i class="fa-solid fa-trash"></i></button>
-          </td>
-        </tr>`).join('');
-    }
-
     function prepararModalProducto() {
+      document.getElementById('modalProductoTitulo').textContent = 'Nuevo Producto';
       document.getElementById('prodEditId').value = '';
       document.getElementById('prodNombre').value = '';
       document.getElementById('prodCosto').value = '';
       document.getElementById('prodPrecio').value = '';
       document.getElementById('prodStock').value = '';
-      document.getElementById('modalProductoTitulo').textContent = "Nuevo Producto";
       abrirModal('modalProducto');
-    }
-
-    function editarProducto(id) {
-      const p = (datos.productos || []).find(item => item.id === id);
-      if (p) {
-        document.getElementById('prodEditId').value = p.id;
-        document.getElementById('prodNombre').value = p.nombre;
-        document.getElementById('prodCategoria').value = p.categoria;
-        document.getElementById('prodCosto').value = p.costo;
-        document.getElementById('prodPrecio').value = p.precio;
-        document.getElementById('prodStock').value = p.stock;
-        document.getElementById('modalProductoTitulo').textContent = "Editar Producto";
-        abrirModal('modalProducto');
-      }
     }
 
     function guardarProductoModal(e) {
       e.preventDefault();
-      const editId = document.getElementById('prodEditId').value;
+      const id = document.getElementById('prodEditId').value;
       const nombre = document.getElementById('prodNombre').value;
       const categoria = document.getElementById('prodCategoria').value;
       const costo = parseFloat(document.getElementById('prodCosto').value);
       const precio = parseFloat(document.getElementById('prodPrecio').value);
       const stock = parseInt(document.getElementById('prodStock').value);
 
-      if(!datos.productos) datos.productos = [];
-
-      if (editId) {
-        const p = datos.productos.find(item => item.id == editId);
-        if (p) Object.assign(p, { nombre, categoria, costo, precio, stock });
+      if (id) {
+        const p = datos.productos.find(item => item.id == id);
+        if (p) {
+          p.nombre = nombre;
+          p.categoria = categoria;
+          p.costo = costo;
+          p.precio = precio;
+          p.stock = stock;
+        }
       } else {
         datos.productos.push({ id: Date.now(), nombre, categoria, costo, precio, stock });
       }
+
       guardarYActualizar();
       cerrarModal('modalProducto');
     }
 
+    function editarProducto(id) {
+      const p = datos.productos.find(item => item.id === id);
+      if (!p) return;
+      document.getElementById('modalProductoTitulo').textContent = 'Editar Producto';
+      document.getElementById('prodEditId').value = p.id;
+      document.getElementById('prodNombre').value = p.nombre;
+      document.getElementById('prodCategoria').value = p.categoria;
+      document.getElementById('prodCosto').value = p.costo;
+      document.getElementById('prodPrecio').value = p.precio;
+      document.getElementById('prodStock').value = p.stock;
+      abrirModal('modalProducto');
+    }
+
+    function eliminarProducto(id) {
+      if (confirm('¿Eliminar este producto?')) {
+        datos.productos = datos.productos.filter(p => p.id !== id);
+        guardarYActualizar();
+      }
+    }
+
+    function eliminarOperacion(id, tipoOp) {
+      if (confirm('¿Deseas eliminar esta operación?')) {
+        if (tipoOp === 'Venta') {
+          datos.movimientos = datos.movimientos.filter(m => m.id !== id);
+        } else {
+          datos.gastosCaja = datos.gastosCaja.filter(g => g.id !== id);
+        }
+        guardarYActualizar();
+      }
+    }
+
     function procesarPlanoMasivo() {
-      const txt = document.getElementById('txtPlano').value.trim();
-      if (!txt) return;
-      if(!datos.productos) datos.productos = [];
-      const lineas = txt.split('\n');
+      const lineas = document.getElementById('txtPlano').value.split('\n');
       lineas.forEach(l => {
         const partes = l.split(',');
         if (partes.length >= 5) {
@@ -882,108 +908,71 @@
             id: Date.now() + Math.random(),
             nombre: partes[0].trim(),
             categoria: partes[1].trim(),
-            costo: parseFloat(partes[2].trim()) || 0,
-            precio: parseFloat(partes[3].trim()) || 0,
-            stock: parseInt(partes[4].trim()) || 0
+            costo: parseFloat(partes[2]),
+            precio: parseFloat(partes[3]),
+            stock: parseInt(partes[4])
           });
         }
       });
       guardarYActualizar();
       cerrarModal('modalPlano');
-      alert('¡Carga masiva completada!');
+      alert('Carga masiva realizada con éxito');
     }
 
     function exportarExcel() {
-      let csv = "Nombre,Categoria,Costo,Precio,Stock\n";
-      (datos.productos || []).forEach(p => {
-        csv += `"${p.nombre}","${p.categoria}",${p.costo},${p.precio},${p.stock}\n`;
+      let csv = 'ID,Nombre,Categoria,Costo,Precio,Stock\n';
+      datos.productos.forEach(p => {
+        csv += `${p.id},"${p.nombre}","${p.categoria}",${p.costo},${p.precio},${p.stock}\n`;
       });
-      const blob = new Blob([csv], { type: 'text/csv' });
-      const a = document.createElement('a');
-      a.href = URL.createObjectURL(blob);
-      a.download = 'Inventario_Mate_y_Lau.csv';
-      a.click();
-    }
-
-    function renderizarHistorial() {
-      const filtro = document.getElementById('histFiltroCat').value;
-
-      let items = [];
-
-      (datos.movimientos || []).forEach(m => {
-        items.push({
-          id: m.id,
-          fecha: m.fecha,
-          tipo: 'Venta',
-          categoria: m.categoria,
-          descripcion: `Venta: ${m.productoNombre} x${m.cantidad} (${m.cliente ? m.cliente : 'Cliente general'})`,
-          monto: m.monto,
-          origen: 'movimiento'
-        });
-      });
-
-      (datos.gastosCaja || []).forEach(g => {
-        items.push({
-          id: g.id,
-          fecha: g.fecha,
-          tipo: 'Gasto',
-          categoria: g.categoria,
-          descripcion: `Gasto: ${g.concepto}`,
-          monto: g.monto,
-          origen: 'gasto'
-        });
-      });
-
-      items.sort((a, b) => b.id - a.id);
-
-      const itemsFiltrados = items.filter(i => filtro === 'Todos' || i.categoria === filtro);
-
-      document.getElementById('tablaHistorial').innerHTML = itemsFiltrados.map(i => `
-        <tr>
-          <td class="p-3 text-slate-400">${i.fecha}</td>
-          <td class="p-3 font-bold ${i.tipo === 'Venta' ? 'text-emerald-600' : 'text-rose-600'}">${i.tipo}</td>
-          <td class="p-3"><span class="px-2 py-0.5 rounded text-[10px] font-bold ${i.categoria === 'Navidad' ? 'bg-rose-100 text-rose-700' : i.categoria === 'Gastos Personales' ? 'bg-purple-100 text-purple-700' : 'bg-amber-100 text-amber-700'}">${i.categoria}</span></td>
-          <td class="p-3">${i.descripcion}</td>
-          <td class="p-3 text-right font-bold ${i.tipo === 'Venta' ? 'text-emerald-600' : 'text-rose-600'}">${i.tipo === 'Venta' ? '+' : '-'}${formatoMoneda(i.monto)}</td>
-          <td class="p-3 text-right"><button onclick="eliminarRegistroHistorial('${i.origen}', ${i.id})" class="text-rose-500"><i class="fa-solid fa-trash"></i></button></td>
-        </tr>`).join('');
-    }
-
-    function eliminarRegistroHistorial(origen, id) {
-      if (confirm('¿Eliminar este registro?')) {
-        if (origen === 'movimiento') {
-          datos.movimientos = (datos.movimientos || []).filter(m => m.id !== id);
-        } else {
-          datos.gastosCaja = (datos.gastosCaja || []).filter(g => g.id !== id);
-        }
-        guardarYActualizar();
-      }
-    }
-
-    function eliminarProducto(id) {
-      if (confirm('¿Eliminar producto?')) {
-        datos.productos = (datos.productos || []).filter(p => p.id !== id);
-        guardarYActualizar();
-      }
+      const blob = new Blob([csv], { type: 'text/csv;charset=utf-8;' });
+      const link = document.createElement('a');
+      link.href = URL.createObjectURL(blob);
+      link.download = 'inventario_mate_y_lau.csv';
+      link.click();
     }
 
     function guardarNuevasCredenciales(e) {
       e.preventDefault();
       const actual = document.getElementById('cfgActual').value;
       if (actual !== credenciales.pass && actual !== credenciales.pin) {
-        alert('La clave o PIN actual ingresado es incorrecto.');
+        alert('Contraseña o PIN actual incorrecto');
         return;
       }
-      credenciales.user = document.getElementById('cfgUsuario').value.trim();
-      credenciales.pass = document.getElementById('cfgPassword').value.trim();
-      credenciales.pin = document.getElementById('cfgPin').value.trim();
+      credenciales.user = document.getElementById('cfgUsuario').value;
+      credenciales.pass = document.getElementById('cfgPassword').value;
+      credenciales.pin = document.getElementById('cfgPin').value;
       localStorage.setItem('CF_CREDENCIALES_V4', JSON.stringify(credenciales));
-      alert('¡Credenciales actualizadas correctamente!');
-      document.getElementById('cfgActual').value = '';
+      alert('Credenciales actualizadas con éxito');
     }
 
-    function abrirModal(id) { document.getElementById(id).classList.remove('hidden'); }
-    function cerrarModal(id) { document.getElementById(id).classList.add('hidden'); }
+    function abrirModalPostal() {
+      if (ultimaVentaRegistrada) {
+        document.getElementById('postalSaludo').textContent = `Hola, ${ultimaVentaRegistrada.descripcion.split(' - Cliente: ')[1] || 'Mateo Acevedo'}:`;
+        document.getElementById('postalFecha').textContent = ultimaVentaRegistrada.fecha;
+      }
+      abrirModal('modalPostal');
+    }
+
+    function descargarPostalPNG() {
+      const area = document.getElementById('postalRenderArea');
+      html2canvas(area, { scale: 2, useCORS: true }).then(canvas => {
+        const link = document.createElement('a');
+        link.download = 'postal_navidena_mate_y_lau.png';
+        link.href = canvas.toDataURL('image/png');
+        link.click();
+      });
+    }
+
+    function descargarPostalPDF() {
+      const area = document.getElementById('postalRenderArea');
+      html2canvas(area, { scale: 2, useCORS: true }).then(canvas => {
+        const imgData = canvas.toDataURL('image/png');
+        const { jsPDF } = window.jspdf;
+        const pdf = new jsPDF('p', 'mm', 'a4');
+        pdf.addImage(imgData, 'PNG', 15, 15, 90, 130);
+        pdf.save('postal_navidena_mate_y_lau.pdf');
+      });
+    }
   </script>
 </body>
 </html>
