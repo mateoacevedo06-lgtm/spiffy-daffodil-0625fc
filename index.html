@@ -80,7 +80,7 @@
           <i class="fa-solid fa-chart-pie text-emerald-400 text-2xl"></i>
           <div>
             <h1 class="text-base font-bold leading-tight">Control Financiero</h1>
-            <p class="text-[11px] text-emerald-400 font-medium">Mate y Lau <span id="syncStatus" class="text-[9px] text-slate-400">(Sincronizado)</span></p>
+            <p class="text-[11px] text-emerald-400 font-medium">Mate y Lau <span id="syncStatus" class="text-[9px] text-amber-300 font-bold ml-1">(Conectando nube...)</span></p>
           </div>
         </div>
         <div class="flex items-center gap-3">
@@ -359,26 +359,21 @@
 
     </main>
 
-    <!-- MODAL POSTAL NAVIDEÑA (FIRMA BAJADA Y SEPARADA DE LAS MATAS) -->
+    <!-- MODAL POSTAL NAVIDEÑA (TEXTO REPETIDO CORREGIDO Y SEPARADO) -->
     <div id="modalPostal" class="fixed inset-0 bg-slate-900/85 backdrop-blur-md hidden flex justify-center items-center p-4 z-50 overflow-y-auto">
       <div class="flex flex-col items-center max-w-md w-full space-y-4 my-auto">
         
         <!-- LIENZO DE LA POSTAL -->
         <div id="postalRenderArea" class="postal-bg-container rounded-2xl shadow-2xl relative text-center text-[#21110b] flex flex-col justify-between overflow-hidden p-6">
           
-          <!-- Encabezado con margen pt-12 para bajarlo de las matas -->
+          <!-- Encabezado con firma limpia y corazón -->
           <div class="pt-12 flex flex-col items-center">
-            <div class="flex justify-center items-center gap-2 text-[#78181c] text-xs mb-1">
-              <span>🎄</span> <span>★</span> <span>🎄</span>
-            </div>
-            <h1 class="font-script text-5xl text-[#6d181c] leading-none mb-2">Mate y Lau</h1>
-            <p class="text-[9px] uppercase tracking-[0.22em] text-[#785928] font-bold block pt-1 border-t border-[#c5a059]/40 w-48 text-center">PEQUEÑOS DETALLES, GRANDES MOMENTOS.</p>
-            <p class="text-[#6d181c] text-xs mt-1">♥</p>
+            <h1 class="font-script text-5xl text-[#6d181c] leading-none mb-1">Mate y Lau</h1>
+            <p class="text-[#6d181c] text-xs">♥</p>
           </div>
 
           <!-- Bloque Central -->
           <div class="space-y-3 my-auto py-2">
-            <p class="font-serif-title text-[10px] tracking-widest text-[#1d3d29] font-bold uppercase">UNA NAVIDAD LLENA DE DETALLES</p>
             <h2 class="font-script text-4xl text-[#6d181c] leading-none my-1">¡Gracias por tu compra!</h2>
 
             <div class="font-body-carmel text-xs leading-relaxed text-[#2b1e17] space-y-2 pt-2">
@@ -392,7 +387,7 @@
             </div>
           </div>
 
-          <!-- Pie de Página -->
+          <!-- Pie de Página (Frase reemplazada a UNA NAVIDAD LLENA DE DETALLES) -->
           <div class="pb-3 flex flex-col items-center">
             <div class="flex items-center justify-center gap-2 text-[#c5a059] mb-2">
               <div class="h-[1px] w-8 bg-[#c5a059]/50"></div>
@@ -402,7 +397,7 @@
 
             <p class="font-body-carmel italic text-[11px] text-[#523e32]">Con cariño,</p>
             <h3 class="font-script text-4xl text-[#6d181c] leading-none my-1">Mate y Lau</h3>
-            <p class="text-[8px] uppercase tracking-widest text-[#785928] block pt-1 border-t border-[#c5a059]/40 w-44 text-center">Pequeños detalles, grandes momentos.</p>
+            <p class="text-[9px] uppercase tracking-widest text-[#785928] font-bold block pt-1 border-t border-[#c5a059]/40 w-52 text-center">UNA NAVIDAD LLENA DE DETALLES</p>
             <p class="text-[#6d181c] text-[9px] mt-1">♥</p>
             
             <div class="pt-3">
@@ -493,9 +488,8 @@
       pin: "1234"
     };
 
-    // Servidor de sincronización compartida en vivo
-    const JSONBIN_URL = 'https://api.jsonbin.io/v3/b/66fa1a1ce4101579ece83d92';
-    const JSONBIN_KEY = '$2a$10$7v8Q4P3E9z1N6c.X8B9Qce8L8xV8gL8z1N6c.X8B9Qce8L8xV8gL';
+    // BASE DE DATOS NUBE GOOGLE FIREBASE EN TIEMPO REAL
+    const FIREBASE_DB_URL = 'https://control-mate-y-lau-default-rtdb.firebaseio.com/datos.json';
 
     let lumbreDesbloqueado = false;
     let ultimaVentaRegistrada = null;
@@ -544,7 +538,7 @@
       document.getElementById('cfgPassword').value = credenciales.pass;
       document.getElementById('cfgPin').value = credenciales.pin;
       
-      // Sincronizar desde la nube al abrir la app
+      // Sincronizar automáticamente desde Google Firebase
       sincronizarDesdeNube();
     }
 
@@ -583,41 +577,49 @@
       renderizarHistorial();
       cargarSelectProductosVenta();
 
-      // Guardar cambios en la nube compartida
-      document.getElementById('syncStatus').textContent = '(Guardando en la nube...)';
-      fetch(JSONBIN_URL, {
+      // Guardar inmediatamente en la Nube
+      const statusEl = document.getElementById('syncStatus');
+      statusEl.textContent = '(Guardando en la nube...)';
+      statusEl.className = "text-[9px] text-amber-300 font-bold ml-1";
+
+      fetch(FIREBASE_DB_URL, {
         method: 'PUT',
-        headers: {
-          'Content-Type': 'application/json',
-          'X-Master-Key': JSONBIN_KEY
-        },
+        headers: { 'Content-Type': 'application/json' },
         body: JSON.stringify(datos)
-      }).then(() => {
-        document.getElementById('syncStatus').textContent = '(Sincronizado 👌)';
-      }).catch(() => {
-        document.getElementById('syncStatus').textContent = '(Local)';
+      })
+      .then(res => res.json())
+      .then(() => {
+        statusEl.textContent = '(Sincronizado en Nube 👌)';
+        statusEl.className = "text-[9px] text-emerald-400 font-bold ml-1";
+      })
+      .catch(() => {
+        statusEl.textContent = '(Modo Local)';
+        statusEl.className = "text-[9px] text-slate-400 ml-1";
       });
     }
 
     function sincronizarDesdeNube() {
-      document.getElementById('syncStatus').textContent = '(Cargando nube...)';
-      fetch(JSONBIN_URL + '/latest', {
-        headers: { 'X-Master-Key': JSONBIN_KEY }
-      })
+      const statusEl = document.getElementById('syncStatus');
+      statusEl.textContent = '(Cargando nube...)';
+      statusEl.className = "text-[9px] text-amber-300 font-bold ml-1";
+
+      fetch(FIREBASE_DB_URL)
       .then(res => res.json())
       .then(data => {
-        if (data && data.record && data.record.productos) {
-          datos = data.record;
+        if (data && data.productos) {
+          datos = data;
           localStorage.setItem('SISTEMA_FINANCIERO_DATOS_V4', JSON.stringify(datos));
         }
-        document.getElementById('syncStatus').textContent = '(Sincronizado 👌)';
+        statusEl.textContent = '(Sincronizado en Nube 👌)';
+        statusEl.className = "text-[9px] text-emerald-400 font-bold ml-1";
         renderizarDashboard();
         renderizarInventario();
         renderizarHistorial();
         cargarSelectProductosVenta();
       })
       .catch(() => {
-        document.getElementById('syncStatus').textContent = '(Modo Local)';
+        statusEl.textContent = '(Modo Local)';
+        statusEl.className = "text-[9px] text-slate-400 ml-1";
         renderizarDashboard();
         renderizarInventario();
         renderizarHistorial();
@@ -630,6 +632,9 @@
       document.querySelectorAll('.tab-btn').forEach(b => b.classList.remove('active'));
       document.getElementById('sec-' + id).classList.remove('hidden');
       document.getElementById('tab-' + id).classList.add('active');
+      
+      // Auto-actualizar al navegar entre pestañas
+      sincronizarDesdeNube();
     }
 
     function formatoMoneda(v) {
@@ -643,18 +648,18 @@
 
       let vDia = 0, vMes = 0, vCosto = 0, vTotal = 0, gCaja = 0;
 
-      datos.movimientos.filter(m => m.categoria === filtro).forEach(m => {
+      (datos.movimientos || []).filter(m => m.categoria === filtro).forEach(m => {
         vTotal += m.monto;
         vCosto += m.costo * m.cantidad;
         if (m.fecha === hoy) vDia += m.monto;
         if (m.fecha.startsWith(mesActual)) vMes += m.monto;
       });
 
-      datos.gastosCaja.filter(g => g.categoria === filtro).forEach(g => {
+      (datos.gastosCaja || []).filter(g => g.categoria === filtro).forEach(g => {
         gCaja += g.monto;
       });
 
-      let totalInv = datos.productos.filter(p => p.categoria === filtro).reduce((acc, p) => acc + (p.costo * p.stock), 0);
+      let totalInv = (datos.productos || []).filter(p => p.categoria === filtro).reduce((acc, p) => acc + (p.costo * p.stock), 0);
       let gananciaNetaBruta = vTotal - vCosto;
       let utilidadLimpia = gananciaNetaBruta - gCaja;
 
@@ -686,21 +691,21 @@
     function cargarSelectProductosVenta() {
       const cat = document.getElementById('ventaCat').value;
       const select = document.getElementById('ventaProdId');
-      const prods = datos.productos.filter(p => p.categoria === cat);
+      const prods = (datos.productos || []).filter(p => p.categoria === cat);
       select.innerHTML = '<option value="">-- Seleccionar --</option>' + 
         prods.map(p => `<option value="${p.id}">${p.nombre} (Stock: ${p.stock})</option>`).join('');
     }
 
     function actualizarPrecioVenta() {
       const id = document.getElementById('ventaProdId').value;
-      const prod = datos.productos.find(p => p.id == id);
+      const prod = (datos.productos || []).find(p => p.id == id);
       if (prod) document.getElementById('ventaPrecio').value = prod.precio;
     }
 
     function guardarVenta(e) {
       e.preventDefault();
       const id = document.getElementById('ventaProdId').value;
-      const prod = datos.productos.find(p => p.id == id);
+      const prod = (datos.productos || []).find(p => p.id == id);
       const cant = parseInt(document.getElementById('ventaCantidad').value);
       const precio = parseFloat(document.getElementById('ventaPrecio').value);
       const cliente = document.getElementById('ventaCliente').value.trim();
@@ -724,6 +729,7 @@
         cliente: cliente
       };
 
+      if(!datos.movimientos) datos.movimientos = [];
       datos.movimientos.unshift(ultimaVentaRegistrada);
       guardarYActualizar();
 
@@ -784,6 +790,7 @@
 
     function guardarGastoCaja(e) {
       e.preventDefault();
+      if(!datos.gastosCaja) datos.gastosCaja = [];
       datos.gastosCaja.unshift({
         id: Date.now(),
         fecha: new Date().toISOString().split('T')[0],
@@ -800,7 +807,7 @@
       const busqueda = document.getElementById('invBuscar').value.toLowerCase();
       const filtro = document.getElementById('invFiltroCat').value;
 
-      const prods = datos.productos.filter(p => {
+      const prods = (datos.productos || []).filter(p => {
         return (filtro === 'Todos' || p.categoria === filtro) && p.nombre.toLowerCase().includes(busqueda);
       });
 
@@ -829,7 +836,7 @@
     }
 
     function editarProducto(id) {
-      const p = datos.productos.find(item => item.id === id);
+      const p = (datos.productos || []).find(item => item.id === id);
       if (p) {
         document.getElementById('prodEditId').value = p.id;
         document.getElementById('prodNombre').value = p.nombre;
@@ -851,6 +858,8 @@
       const precio = parseFloat(document.getElementById('prodPrecio').value);
       const stock = parseInt(document.getElementById('prodStock').value);
 
+      if(!datos.productos) datos.productos = [];
+
       if (editId) {
         const p = datos.productos.find(item => item.id == editId);
         if (p) Object.assign(p, { nombre, categoria, costo, precio, stock });
@@ -864,6 +873,7 @@
     function procesarPlanoMasivo() {
       const txt = document.getElementById('txtPlano').value.trim();
       if (!txt) return;
+      if(!datos.productos) datos.productos = [];
       const lineas = txt.split('\n');
       lineas.forEach(l => {
         const partes = l.split(',');
@@ -885,7 +895,7 @@
 
     function exportarExcel() {
       let csv = "Nombre,Categoria,Costo,Precio,Stock\n";
-      datos.productos.forEach(p => {
+      (datos.productos || []).forEach(p => {
         csv += `"${p.nombre}","${p.categoria}",${p.costo},${p.precio},${p.stock}\n`;
       });
       const blob = new Blob([csv], { type: 'text/csv' });
@@ -895,14 +905,12 @@
       a.click();
     }
 
-    // Historial Unificado (Ventas + Gastos de Caja)
     function renderizarHistorial() {
       const filtro = document.getElementById('histFiltroCat').value;
 
       let items = [];
 
-      // Unir Ventas
-      datos.movimientos.forEach(m => {
+      (datos.movimientos || []).forEach(m => {
         items.push({
           id: m.id,
           fecha: m.fecha,
@@ -914,8 +922,7 @@
         });
       });
 
-      // Unir Gastos
-      datos.gastosCaja.forEach(g => {
+      (datos.gastosCaja || []).forEach(g => {
         items.push({
           id: g.id,
           fecha: g.fecha,
@@ -927,7 +934,6 @@
         });
       });
 
-      // Ordenar por fecha descendente
       items.sort((a, b) => b.id - a.id);
 
       const itemsFiltrados = items.filter(i => filtro === 'Todos' || i.categoria === filtro);
@@ -946,9 +952,9 @@
     function eliminarRegistroHistorial(origen, id) {
       if (confirm('¿Eliminar este registro?')) {
         if (origen === 'movimiento') {
-          datos.movimientos = datos.movimientos.filter(m => m.id !== id);
+          datos.movimientos = (datos.movimientos || []).filter(m => m.id !== id);
         } else {
-          datos.gastosCaja = datos.gastosCaja.filter(g => g.id !== id);
+          datos.gastosCaja = (datos.gastosCaja || []).filter(g => g.id !== id);
         }
         guardarYActualizar();
       }
@@ -956,7 +962,7 @@
 
     function eliminarProducto(id) {
       if (confirm('¿Eliminar producto?')) {
-        datos.productos = datos.productos.filter(p => p.id !== id);
+        datos.productos = (datos.productos || []).filter(p => p.id !== id);
         guardarYActualizar();
       }
     }
