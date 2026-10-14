@@ -118,41 +118,53 @@
 
     <main class="max-w-7xl mx-auto p-4 space-y-6">
       <section id="sec-dashboard" class="space-y-6">
-        <div class="bg-white p-4 rounded-xl shadow-sm border border-slate-200 flex flex-col sm:flex-row justify-between items-center gap-3">
-          <span class="text-xs font-bold text-slate-600 uppercase">Filtrar Análisis Financiero:</span>
-          <select id="dashFiltro" onchange="cambiarFiltroDashboard()" class="p-2 border rounded-lg text-xs bg-slate-50 font-semibold text-slate-800">
-            <option value="Navidad">Proyecto Navidad</option>
-            <option value="Gastos Personales">Gastos Personales</option>
-            <option value="Origen Lumbre">Comercial / Origen Lumbre (🔒 Requiere PIN)</option>
-          </select>
-        </div>
+        
+        <!-- BARRA DE FILTROS SUPERIOR DEL DASHBOARD -->
+        <div class="bg-white p-4 rounded-xl shadow-sm border border-slate-200 flex flex-col lg:flex-row justify-between items-start lg:items-center gap-4">
+          <div class="flex items-center gap-2 text-xs font-bold text-slate-700 uppercase">
+            <i class="fa-solid fa-filter text-emerald-600 text-sm"></i>
+            <span>Filtrar Análisis Financiero:</span>
+          </div>
 
-        <!-- CUADRO DE CORTE POR MÉTODO DE PAGO -->
-        <div class="bg-slate-900 text-white p-5 rounded-xl shadow-md space-y-3">
-          <h3 class="text-xs font-bold uppercase tracking-wider text-emerald-400"><i class="fa-solid fa-wallet"></i> Dinero Recibido por Método de Pago (Arqueo de Caja)</h3>
-          <div class="grid grid-cols-2 md:grid-cols-4 gap-3 text-center">
-            <div class="bg-slate-800 p-3 rounded-lg border border-slate-700">
-              <span class="text-[10px] text-slate-400 uppercase">Efectivo</span>
-              <div class="text-base font-bold text-emerald-300 mt-1" id="pagoEfectivo">$0</div>
+          <div class="grid grid-cols-1 sm:grid-cols-2 md:grid-cols-4 gap-2 w-full lg:w-auto">
+            <!-- Filtro Proyecto -->
+            <select id="dashFiltro" onchange="cambiarFiltroDashboard()" class="p-2 border rounded-lg text-xs bg-slate-50 font-semibold text-slate-800">
+              <option value="Navidad">Proyecto Navidad</option>
+              <option value="Gastos Personales">Gastos Personales</option>
+              <option value="Origen Lumbre">Comercial / Origen Lumbre (🔒 Requiere PIN)</option>
+            </select>
+
+            <!-- Filtro Método de Pago -->
+            <select id="dashFiltroMetodo" onchange="renderizarDashboard()" class="p-2 border rounded-lg text-xs bg-slate-50 font-semibold text-slate-800">
+              <option value="Todos">Todos los métodos</option>
+              <option value="Efectivo font-bold">💵 Efectivo</option>
+              <option value="Nequi">🟣 Nequi</option>
+              <option value="Bancolombia">🟡 Bancolombia</option>
+              <option value="Daviplata">🔴 Daviplata</option>
+            </select>
+
+            <!-- Filtro Fecha Desde -->
+            <div class="flex items-center gap-1 bg-slate-50 p-1.5 border rounded-lg text-xs">
+              <span class="text-slate-400 font-semibold">Desde:</span>
+              <input type="date" id="dashFiltroDesde" onchange="renderizarDashboard()" class="bg-transparent outline-none font-semibold text-slate-800 w-full">
             </div>
-            <div class="bg-slate-800 p-3 rounded-lg border border-slate-700">
-              <span class="text-[10px] text-slate-400 uppercase">Nequi</span>
-              <div class="text-base font-bold text-indigo-300 mt-1" id="pagoNequi">$0</div>
-            </div>
-            <div class="bg-slate-800 p-3 rounded-lg border border-slate-700">
-              <span class="text-[10px] text-slate-400 uppercase">Bancolombia</span>
-              <div class="text-base font-bold text-amber-300 mt-1" id="pagoBancolombia">$0</div>
-            </div>
-            <div class="bg-slate-800 p-3 rounded-lg border border-slate-700">
-              <span class="text-[10px] text-slate-400 uppercase">Daviplata</span>
-              <div class="text-base font-bold text-rose-300 mt-1" id="pagoDaviplata">$0</div>
+
+            <!-- Filtro Fecha Hasta -->
+            <div class="flex items-center gap-1 bg-slate-50 p-1.5 border rounded-lg text-xs">
+              <span class="text-slate-400 font-semibold">Hasta:</span>
+              <input type="date" id="dashFiltroHasta" onchange="renderizarDashboard()" class="bg-transparent outline-none font-semibold text-slate-800 w-full">
             </div>
           </div>
+
+          <button onclick="limpiarFiltrosDashboard()" class="bg-slate-200 hover:bg-slate-300 text-slate-700 px-3 py-2 rounded-lg text-xs font-bold transition self-end lg:self-center">
+            Limpiar Filtros
+          </button>
         </div>
 
+        <!-- TARJETAS PRINCIPALES DEL DASHBOARD -->
         <div class="grid grid-cols-2 md:grid-cols-4 gap-4">
           <div class="bg-white p-4 rounded-xl shadow-sm border border-slate-200">
-            <span class="text-[11px] font-bold uppercase text-slate-400">Ventas del Día</span>
+            <span class="text-[11px] font-bold uppercase text-slate-400">Ventas Filtradas</span>
             <div class="text-xl font-bold text-slate-800 mt-1" id="dashVentasDia">$0</div>
           </div>
           <div class="bg-white p-4 rounded-xl shadow-sm border border-slate-200">
@@ -206,7 +218,6 @@
               </select>
             </div>
 
-            <!-- BUSCADOR INTERACTIVO EN EL SELECTOR DE VENTAS -->
             <div>
               <label class="block text-xs font-semibold text-slate-600 mb-1">Buscar y Seleccionar Producto</label>
               <input type="text" id="ventaBusqueda" oninput="actualizarBuscadorVenta()" placeholder="Escribe para buscar..." class="w-full p-2.5 border rounded-lg text-xs mb-1 bg-slate-50">
@@ -226,7 +237,6 @@
               </div>
             </div>
 
-            <!-- NUEVO: MÉTODO DE PAGO -->
             <div>
               <label class="block text-xs font-semibold text-slate-600 mb-1">Método de Pago</label>
               <select id="ventaMetodoPago" class="w-full p-2.5 border rounded-lg bg-slate-50 text-sm font-semibold" required>
@@ -330,7 +340,6 @@
         <div class="flex flex-col sm:flex-row justify-between items-start sm:items-center gap-3">
           <h2 class="text-base font-bold text-slate-800">Historial de Operaciones</h2>
           
-          <!-- FILTROS DE CALENDARIO Y CATEGORÍA -->
           <div class="flex flex-wrap gap-2 items-center">
             <div class="flex items-center gap-1 bg-white p-1.5 border rounded-lg text-xs">
               <span class="text-slate-400">Desde:</span>
@@ -725,7 +734,6 @@
       alert('Gasto registrado con éxito');
     }
 
-    // BUSCADOR INTERACTIVO EN SELECTOR DE VENTAS
     function actualizarBuscadorVenta() {
       const cat = document.getElementById('ventaCat').value;
       const textoBusqueda = (document.getElementById('ventaBusqueda').value || '').toLowerCase();
@@ -832,35 +840,43 @@
       renderizarHistorial();
     }
 
+    // DASHBOARD MULTI-FILTRO DINÁMICO (FECHA + MÉTODO DE PAGO + CATEGORÍA)
     function renderizarDashboard() {
-      const filtro = document.getElementById('dashFiltro').value;
+      const filtroCat = document.getElementById('dashFiltro').value;
+      const filtroMetodo = document.getElementById('dashFiltroMetodo').value;
+      const filtroDesde = document.getElementById('dashFiltroDesde').value;
+      const filtroHasta = document.getElementById('dashFiltroHasta').value;
+
       let movs = datos.movimientos || [];
       let gastos = datos.gastosCaja || [];
       let productos = datos.productos || [];
 
-      if (filtro !== 'Todos') {
-        movs = movs.filter(m => m.categoria === filtro);
-        gastos = gastos.filter(g => g.categoria === filtro);
+      // 1. Filtrar por Categoría
+      if (filtroCat !== 'Todos') {
+        movs = movs.filter(m => m.categoria === filtroCat);
+        gastos = gastos.filter(g => g.categoria === filtroCat);
+      }
+
+      // 2. Filtrar por Método de Pago
+      if (filtroMetodo !== 'Todos') {
+        movs = movs.filter(m => m.metodoPago === filtroMetodo);
+      }
+
+      // 3. Filtrar por Fecha Desde / Hasta
+      if (filtroDesde) {
+        movs = movs.filter(m => m.fecha >= filtroDesde);
+        gastos = gastos.filter(g => g.fecha >= filtroDesde);
+      }
+
+      if (filtroHasta) {
+        movs = movs.filter(m => m.fecha <= filtroHasta);
+        gastos = gastos.filter(g => g.fecha <= filtroHasta);
       }
 
       const hoy = new Date().toISOString().split('T')[0];
       const mesActual = hoy.substring(0, 7);
 
-      // CÁLCULO POR MÉTODO DE PAGO
-      let tEfectivo = 0, tNequi = 0, tBancolombia = 0, tDaviplata = 0;
-      movs.forEach(m => {
-        if (m.metodoPago === 'Efectivo') tEfectivo += m.monto;
-        else if (m.metodoPago === 'Nequi') tNequi += m.monto;
-        else if (m.metodoPago === 'Bancolombia') tBancolombia += m.monto;
-        else if (m.metodoPago === 'Daviplata') tDaviplata += m.monto;
-      });
-
-      document.getElementById('pagoEfectivo').textContent = `$${tEfectivo.toLocaleString()}`;
-      document.getElementById('pagoNequi').textContent = `$${tNequi.toLocaleString()}`;
-      document.getElementById('pagoBancolombia').textContent = `$${tBancolombia.toLocaleString()}`;
-      document.getElementById('pagoDaviplata').textContent = `$${tDaviplata.toLocaleString()}`;
-
-      const ventasDia = movs.filter(m => m.fecha === hoy).reduce((acc, m) => acc + m.monto, 0);
+      const ventasFiltradasTotal = movs.reduce((acc, m) => acc + m.monto, 0);
       const ventasMes = movs.filter(m => m.fecha.startsWith(mesActual)).reduce((acc, m) => acc + m.monto, 0);
       const ventasCosto = movs.reduce((acc, m) => acc + (m.costoTotal || 0), 0);
       const gananciaBruta = movs.reduce((acc, m) => acc + (m.monto - (m.costoTotal || 0)), 0);
@@ -869,7 +885,7 @@
       const totalGastosCaja = gastos.reduce((acc, g) => acc + g.monto, 0);
       const utilidadLimpia = gananciaBruta - totalGastosCaja;
 
-      document.getElementById('dashVentasDia').textContent = `$${ventasDia.toLocaleString()}`;
+      document.getElementById('dashVentasDia').textContent = `$${ventasFiltradasTotal.toLocaleString()}`;
       document.getElementById('dashVentasMes').textContent = `$${ventasMes.toLocaleString()}`;
       document.getElementById('dashVentasCosto').textContent = `$${ventasCosto.toLocaleString()}`;
       document.getElementById('dashGananciaNeta').textContent = `$${gananciaBruta.toLocaleString()}`;
@@ -878,6 +894,13 @@
       document.getElementById('dashUtilidadLimpia').textContent = `$${utilidadLimpia.toLocaleString()}`;
 
       renderizarGrafico(movs, gastos);
+    }
+
+    function limpiarFiltrosDashboard() {
+      document.getElementById('dashFiltroMetodo').value = 'Todos';
+      document.getElementById('dashFiltroDesde').value = '';
+      document.getElementById('dashFiltroHasta').value = '';
+      renderizarDashboard();
     }
 
     function renderizarGrafico(movs, gastos) {
@@ -1006,6 +1029,7 @@
           csv += `${p.id},"${p.nombre}","${p.categoria}",${p.costo},${p.precio},${p.stock}\n`;
         });
       }
+      const blob = new Blob los datos
       const blob = new Blob([csv], { type: 'text/csv;charset=utf-8;' });
       const link = document.createElement('a');
       link.href = URL.createObjectURL(blob);
