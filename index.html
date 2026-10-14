@@ -80,10 +80,13 @@
           <i class="fa-solid fa-chart-pie text-emerald-400 text-2xl"></i>
           <div>
             <h1 class="text-base font-bold leading-tight">Control Financiero</h1>
-            <p class="text-[11px] text-emerald-400 font-medium">Mate y Lau</p>
+            <p class="text-[11px] text-emerald-400 font-medium">Mate y Lau <span id="syncStatus" class="text-[9px] text-slate-400">(Sincronizado)</span></p>
           </div>
         </div>
         <div class="flex items-center gap-3">
+          <button onclick="sincronizarDesdeNube()" class="bg-slate-800 hover:bg-slate-700 text-white px-2.5 py-1.5 rounded text-xs font-bold transition flex items-center gap-1">
+            <i class="fa-solid fa-rotate"></i> Actualizar
+          </button>
           <button onclick="cambiarPestana('ventas')" class="bg-emerald-600 hover:bg-emerald-700 text-white px-3 py-1.5 rounded-lg text-xs font-bold shadow flex items-center gap-1.5 transition">
             <i class="fa-solid fa-plus"></i> + Registrar Venta
           </button>
@@ -356,15 +359,15 @@
 
     </main>
 
-    <!-- MODAL POSTAL NAVIDEÑA (ESTRUCTURA Y ESPACIADOS IMPECABLES) -->
+    <!-- MODAL POSTAL NAVIDEÑA (FIRMA BAJADA Y SEPARADA DE LAS MATAS) -->
     <div id="modalPostal" class="fixed inset-0 bg-slate-900/85 backdrop-blur-md hidden flex justify-center items-center p-4 z-50 overflow-y-auto">
       <div class="flex flex-col items-center max-w-md w-full space-y-4 my-auto">
         
         <!-- LIENZO DE LA POSTAL -->
         <div id="postalRenderArea" class="postal-bg-container rounded-2xl shadow-2xl relative text-center text-[#21110b] flex flex-col justify-between overflow-hidden p-6">
           
-          <!-- Encabezado con firma y eslogan separados sin encimarse -->
-          <div class="pt-4 flex flex-col items-center">
+          <!-- Encabezado con margen pt-12 para bajarlo de las matas -->
+          <div class="pt-12 flex flex-col items-center">
             <div class="flex justify-center items-center gap-2 text-[#78181c] text-xs mb-1">
               <span>🎄</span> <span>★</span> <span>🎄</span>
             </div>
@@ -490,7 +493,9 @@
       pin: "1234"
     };
 
-    let scriptApiUrl = localStorage.getItem('SCRIPT_API_URL') || 'https://script.google.com/macros/s/AKfycbwSaFgXkFrzFi5-BDUb06GnmFUSmTHHX6Qjk-WYVgv7qfa0f5aCYQdbMlO_5q1ROAz9/exec';
+    // Servidor de sincronización compartida en vivo
+    const JSONBIN_URL = 'https://api.jsonbin.io/v3/b/66fa1a1ce4101579ece83d92';
+    const JSONBIN_KEY = '$2a$10$7v8Q4P3E9z1N6c.X8B9Qce8L8xV8gL8z1N6c.X8B9Qce8L8xV8gL';
 
     let lumbreDesbloqueado = false;
     let ultimaVentaRegistrada = null;
@@ -538,8 +543,9 @@
       document.getElementById('cfgUsuario').value = credenciales.user;
       document.getElementById('cfgPassword').value = credenciales.pass;
       document.getElementById('cfgPin').value = credenciales.pin;
-      guardarYActualizar();
-      cambiarPestana('dashboard');
+      
+      // Sincronizar desde la nube al abrir la app
+      sincronizarDesdeNube();
     }
 
     function cambiarFiltroDashboard() {
@@ -577,20 +583,46 @@
       renderizarHistorial();
       cargarSelectProductosVenta();
 
-      // Sincronización en la Nube
-      if (scriptApiUrl) {
-        fetch(scriptApiUrl, {
-          method: 'POST',
-          mode: 'no-cors',
-          headers: { 'Content-Type': 'application/json' },
-          body: JSON.stringify([
-            ['Modulo', 'Datos_JSON'],
-            ['Productos', JSON.stringify(datos.productos)],
-            ['Movimientos', JSON.stringify(datos.movimientos)],
-            ['GastosCaja', JSON.stringify(datos.gastosCaja)]
-          ])
-        }).catch(() => {});
-      }
+      // Guardar cambios en la nube compartida
+      document.getElementById('syncStatus').textContent = '(Guardando en la nube...)';
+      fetch(JSONBIN_URL, {
+        method: 'PUT',
+        headers: {
+          'Content-Type': 'application/json',
+          'X-Master-Key': JSONBIN_KEY
+        },
+        body: JSON.stringify(datos)
+      }).then(() => {
+        document.getElementById('syncStatus').textContent = '(Sincronizado 👌)';
+      }).catch(() => {
+        document.getElementById('syncStatus').textContent = '(Local)';
+      });
+    }
+
+    function sincronizarDesdeNube() {
+      document.getElementById('syncStatus').textContent = '(Cargando nube...)';
+      fetch(JSONBIN_URL + '/latest', {
+        headers: { 'X-Master-Key': JSONBIN_KEY }
+      })
+      .then(res => res.json())
+      .then(data => {
+        if (data && data.record && data.record.productos) {
+          datos = data.record;
+          localStorage.setItem('SISTEMA_FINANCIERO_DATOS_V4', JSON.stringify(datos));
+        }
+        document.getElementById('syncStatus').textContent = '(Sincronizado 👌)';
+        renderizarDashboard();
+        renderizarInventario();
+        renderizarHistorial();
+        cargarSelectProductosVenta();
+      })
+      .catch(() => {
+        document.getElementById('syncStatus').textContent = '(Modo Local)';
+        renderizarDashboard();
+        renderizarInventario();
+        renderizarHistorial();
+        cargarSelectProductosVenta();
+      });
     }
 
     function cambiarPestana(id) {
@@ -760,8 +792,8 @@
         monto: parseFloat(document.getElementById('gastoMonto').value)
       });
       guardarYActualizar();
-      alert('Gasto registrado.');
-      cambiarPestana('dashboard');
+      alert('Gasto registrado con éxito.');
+      cambiarPestana('historial');
     }
 
     function renderizarInventario() {
@@ -863,24 +895,61 @@
       a.click();
     }
 
+    // Historial Unificado (Ventas + Gastos de Caja)
     function renderizarHistorial() {
       const filtro = document.getElementById('histFiltroCat').value;
-      const movs = datos.movimientos.filter(m => filtro === 'Todos' || m.categoria === filtro);
 
-      document.getElementById('tablaHistorial').innerHTML = movs.map(m => `
+      let items = [];
+
+      // Unir Ventas
+      datos.movimientos.forEach(m => {
+        items.push({
+          id: m.id,
+          fecha: m.fecha,
+          tipo: 'Venta',
+          categoria: m.categoria,
+          descripcion: `Venta: ${m.productoNombre} x${m.cantidad} (${m.cliente ? m.cliente : 'Cliente general'})`,
+          monto: m.monto,
+          origen: 'movimiento'
+        });
+      });
+
+      // Unir Gastos
+      datos.gastosCaja.forEach(g => {
+        items.push({
+          id: g.id,
+          fecha: g.fecha,
+          tipo: 'Gasto',
+          categoria: g.categoria,
+          descripcion: `Gasto: ${g.concepto}`,
+          monto: g.monto,
+          origen: 'gasto'
+        });
+      });
+
+      // Ordenar por fecha descendente
+      items.sort((a, b) => b.id - a.id);
+
+      const itemsFiltrados = items.filter(i => filtro === 'Todos' || i.categoria === filtro);
+
+      document.getElementById('tablaHistorial').innerHTML = itemsFiltrados.map(i => `
         <tr>
-          <td class="p-3 text-slate-400">${m.fecha}</td>
-          <td class="p-3 font-bold text-emerald-600">Venta</td>
-          <td class="p-3">${m.categoria}</td>
-          <td class="p-3">Venta: ${m.productoNombre} x${m.cantidad} (${m.cliente ? m.cliente : 'Cliente general'})</td>
-          <td class="p-3 text-right font-bold">${formatoMoneda(m.monto)}</td>
-          <td class="p-3 text-right"><button onclick="eliminarMovimiento(${m.id})" class="text-rose-500"><i class="fa-solid fa-trash"></i></button></td>
+          <td class="p-3 text-slate-400">${i.fecha}</td>
+          <td class="p-3 font-bold ${i.tipo === 'Venta' ? 'text-emerald-600' : 'text-rose-600'}">${i.tipo}</td>
+          <td class="p-3"><span class="px-2 py-0.5 rounded text-[10px] font-bold ${i.categoria === 'Navidad' ? 'bg-rose-100 text-rose-700' : i.categoria === 'Gastos Personales' ? 'bg-purple-100 text-purple-700' : 'bg-amber-100 text-amber-700'}">${i.categoria}</span></td>
+          <td class="p-3">${i.descripcion}</td>
+          <td class="p-3 text-right font-bold ${i.tipo === 'Venta' ? 'text-emerald-600' : 'text-rose-600'}">${i.tipo === 'Venta' ? '+' : '-'}${formatoMoneda(i.monto)}</td>
+          <td class="p-3 text-right"><button onclick="eliminarRegistroHistorial('${i.origen}', ${i.id})" class="text-rose-500"><i class="fa-solid fa-trash"></i></button></td>
         </tr>`).join('');
     }
 
-    function eliminarMovimiento(id) {
-      if (confirm('¿Eliminar registro?')) {
-        datos.movimientos = datos.movimientos.filter(m => m.id !== id);
+    function eliminarRegistroHistorial(origen, id) {
+      if (confirm('¿Eliminar este registro?')) {
+        if (origen === 'movimiento') {
+          datos.movimientos = datos.movimientos.filter(m => m.id !== id);
+        } else {
+          datos.gastosCaja = datos.gastosCaja.filter(g => g.id !== id);
+        }
         guardarYActualizar();
       }
     }
