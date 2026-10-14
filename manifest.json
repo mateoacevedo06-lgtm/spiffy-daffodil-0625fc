@@ -1,15 +1,17 @@
 {
-  "short_name": "LumbreApp",
-  "name": "Control Financiero Lumbre & Navidad",
-  "icons": [
-    {
-      "src": "https://cdn-icons-png.flaticon.com/512/2910/2910768.png",
-      "type": "image/png",
-      "sizes": "512x512"
-    }
-  ],
-  "start_url": "./index.html",
-  "background_color": "#0f172a",
+  "name": "Control Financiero - Mate y Lau",
+  "short_name": "Mate y Lau",
+  "description": "Ventas, inventario y cuentas de Mate y Lau",
+  "start_url": "./",
+  "scope": "./",
+  "display": "standalone",
+  "orientation": "portrait",
+  "background_color": "#0b0b0b",
   "theme_color": "#0f172a",
-  "display": "standalone"
+  "icons": [
+    { "src": "icono-192.png", "sizes": "192x192", "type": "image/png", "purpose": "any" },
+    { "src": "icono-512.png", "sizes": "512x512", "type": "image/png", "purpose": "any" },
+    { "src": "icono-192.png", "sizes": "192x192", "type": "image/png", "purpose": "maskable" },
+    { "src": "icono-512.png", "sizes": "512x512", "type": "image/png", "purpose": "maskable" }
+  ]
 }
