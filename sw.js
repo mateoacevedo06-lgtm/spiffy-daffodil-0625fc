@@ -1,6 +1,6 @@
 // Service worker de Mate y Lau
 // Siempre busca primero la versión nueva en internet; la copia guardada solo se usa sin conexión.
-const VERSION = 'mateylau-v3';
+const VERSION = 'empre-v5';
 
 self.addEventListener('install', () => self.skipWaiting());
 
