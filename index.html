@@ -17,7 +17,7 @@
   <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
   <link href="https://fonts.googleapis.com/css2?family=Alex+Brush&family=Cinzel:wght@600;700&family=Lora:ital,wght@0,400;0,600;1,400&display=swap" rel="stylesheet">
 
-  <!-- Librerías para exportar PNG y PDF de alta calidad -->
+  <!-- Librerías para exportar PNG y PDF -->
   <script src="https://cdnjs.cloudflare.com/ajax/libs/html2canvas/1.4.1/html2canvas.min.js"></script>
   <script src="https://cdnjs.cloudflare.com/ajax/libs/jspdf/2.5.1/jspdf.umd.min.js"></script>
 
@@ -31,13 +31,14 @@
     .font-serif-title { font-family: 'Cinzel', serif; }
     .font-body-carmel { font-family: 'Lora', serif; }
 
-    /* Estilo del lienzo con la imagen fotográfica real de fondo */
+    /* Fondo de la postal */
     .postal-bg-container {
       background-image: url('fondo-postal.jpg');
       background-size: cover;
       background-position: center;
       width: 420px;
-      height: 640px;
+      min-height: 640px;
+      box-sizing: border-box;
     }
   </style>
 </head>
@@ -212,7 +213,6 @@
             </button>
           </form>
 
-          <!-- Botón para abrir postal -->
           <div id="contenedorBotonPostal" class="hidden border-t pt-4 text-center">
             <button onclick="abrirModalPostal()" class="w-full bg-gradient-to-r from-rose-700 to-emerald-800 hover:from-rose-800 hover:to-emerald-900 text-white font-bold py-3 rounded-lg shadow-md flex items-center justify-center gap-2 transition">
               <i class="fa-solid fa-gift text-amber-300"></i> Generar Postal Navideña (Mate y Lau)
@@ -356,44 +356,53 @@
 
     </main>
 
-    <!-- MODAL POSTAL NAVIDEÑA (MATE Y LAU - PLANTILLA FOTOGRÁFICA) -->
+    <!-- MODAL POSTAL NAVIDEÑA (ESTRUCTURA Y ESPACIADOS IMPECABLES) -->
     <div id="modalPostal" class="fixed inset-0 bg-slate-900/85 backdrop-blur-md hidden flex justify-center items-center p-4 z-50 overflow-y-auto">
       <div class="flex flex-col items-center max-w-md w-full space-y-4 my-auto">
         
-        <!-- LIENZO DE LA POSTAL CON LA IMAGEN DE FONDO PERFECTA -->
-        <div id="postalRenderArea" class="postal-bg-container rounded-2xl p-6 shadow-2xl relative text-center text-[#21110b] flex flex-col justify-between overflow-hidden">
+        <!-- LIENZO DE LA POSTAL -->
+        <div id="postalRenderArea" class="postal-bg-container rounded-2xl shadow-2xl relative text-center text-[#21110b] flex flex-col justify-between overflow-hidden p-6">
           
-          <!-- Encabezado con Nombre y Eslogan -->
-          <div class="space-y-1 pt-6">
-            <h1 class="font-script text-5xl text-[#6d181c] leading-none drop-shadow-sm">Mate y Lau</h1>
-            <p class="text-[9px] uppercase tracking-[0.22em] text-[#785928] font-bold">PEQUEÑOS DETALLES, GRANDES MOMENTOS.</p>
-            <p class="text-[#78181c] text-xs">♥</p>
+          <!-- Encabezado con firma y eslogan separados sin encimarse -->
+          <div class="pt-4 flex flex-col items-center">
+            <div class="flex justify-center items-center gap-2 text-[#78181c] text-xs mb-1">
+              <span>🎄</span> <span>★</span> <span>🎄</span>
+            </div>
+            <h1 class="font-script text-5xl text-[#6d181c] leading-none mb-2">Mate y Lau</h1>
+            <p class="text-[9px] uppercase tracking-[0.22em] text-[#785928] font-bold block pt-1 border-t border-[#c5a059]/40 w-48 text-center">PEQUEÑOS DETALLES, GRANDES MOMENTOS.</p>
+            <p class="text-[#6d181c] text-xs mt-1">♥</p>
           </div>
 
-          <!-- Bloque Central: Mensaje Poético exacto -->
-          <div class="space-y-3 px-2 py-1 bg-white/30 backdrop-blur-[2px] rounded-xl my-auto">
+          <!-- Bloque Central -->
+          <div class="space-y-3 my-auto py-2">
             <p class="font-serif-title text-[10px] tracking-widest text-[#1d3d29] font-bold uppercase">UNA NAVIDAD LLENA DE DETALLES</p>
-            <h2 class="font-script text-4xl text-[#6d181c]">¡Gracias por tu compra!</h2>
+            <h2 class="font-script text-4xl text-[#6d181c] leading-none my-1">¡Gracias por tu compra!</h2>
 
-            <div class="font-body-carmel text-xs leading-relaxed text-[#2b1e17] space-y-2 pt-1">
-              <p id="postalSaludo" class="text-sm font-semibold text-[#1a3825]">Hola, [Cliente]:</p>
-              <p class="text-[11px]">
+            <div class="font-body-carmel text-xs leading-relaxed text-[#2b1e17] space-y-2 pt-2">
+              <p id="postalSaludo" class="text-sm font-semibold text-[#1a3825]">Hola, Mateo Acevedo:</p>
+              <p class="text-[11px] px-3">
                 Nos hace muy felices que hayas elegido nuestros productos para acompañar tus momentos especiales.
               </p>
-              <p class="text-[11px]">
+              <p class="text-[11px] px-3">
                 Que esta Navidad esté llena de amor, unión y recuerdos bonitos junto a quienes más quieres.
               </p>
             </div>
           </div>
 
-          <!-- Pie de página: Firma y Fecha -->
-          <div class="space-y-1 pb-4">
+          <!-- Pie de Página -->
+          <div class="pb-3 flex flex-col items-center">
+            <div class="flex items-center justify-center gap-2 text-[#c5a059] mb-2">
+              <div class="h-[1px] w-8 bg-[#c5a059]/50"></div>
+              <span class="text-xs">★</span>
+              <div class="h-[1px] w-8 bg-[#c5a059]/50"></div>
+            </div>
+
             <p class="font-body-carmel italic text-[11px] text-[#523e32]">Con cariño,</p>
-            <h3 class="font-script text-4xl text-[#6d181c]">Mate y Lau</h3>
-            <p class="text-[8px] uppercase tracking-widest text-[#785928]">Pequeños detalles, grandes momentos.</p>
-            <p class="text-[#6d181c] text-[9px]">♥</p>
+            <h3 class="font-script text-4xl text-[#6d181c] leading-none my-1">Mate y Lau</h3>
+            <p class="text-[8px] uppercase tracking-widest text-[#785928] block pt-1 border-t border-[#c5a059]/40 w-44 text-center">Pequeños detalles, grandes momentos.</p>
+            <p class="text-[#6d181c] text-[9px] mt-1">♥</p>
             
-            <div class="pt-2">
+            <div class="pt-3">
               <span class="inline-flex items-center gap-1 bg-[#f5ede0]/90 text-[#423328] text-[9px] font-mono px-3 py-0.5 rounded-full border border-[#d2c0a8]">
                 📅 <span id="postalFecha">2026-10-13</span>
               </span>
@@ -402,7 +411,7 @@
 
         </div>
 
-        <!-- Botones de Descarga e Interacción -->
+        <!-- Botones de Descarga -->
         <div class="flex flex-wrap gap-2 w-full print:hidden">
           <button onclick="cerrarModal('modalPostal')" class="flex-1 py-2.5 bg-slate-800 hover:bg-slate-700 text-slate-300 font-bold rounded-xl text-xs transition">
             Cerrar
@@ -480,6 +489,8 @@
       pass: "navidad2026",
       pin: "1234"
     };
+
+    let scriptApiUrl = localStorage.getItem('SCRIPT_API_URL') || 'https://script.google.com/macros/s/AKfycbwSaFgXkFrzFi5-BDUb06GnmFUSmTHHX6Qjk-WYVgv7qfa0f5aCYQdbMlO_5q1ROAz9/exec';
 
     let lumbreDesbloqueado = false;
     let ultimaVentaRegistrada = null;
@@ -565,6 +576,21 @@
       renderizarInventario();
       renderizarHistorial();
       cargarSelectProductosVenta();
+
+      // Sincronización en la Nube
+      if (scriptApiUrl) {
+        fetch(scriptApiUrl, {
+          method: 'POST',
+          mode: 'no-cors',
+          headers: { 'Content-Type': 'application/json' },
+          body: JSON.stringify([
+            ['Modulo', 'Datos_JSON'],
+            ['Productos', JSON.stringify(datos.productos)],
+            ['Movimientos', JSON.stringify(datos.movimientos)],
+            ['GastosCaja', JSON.stringify(datos.gastosCaja)]
+          ])
+        }).catch(() => {});
+      }
     }
 
     function cambiarPestana(id) {
