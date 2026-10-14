@@ -72,13 +72,10 @@
           <i class="fa-solid fa-chart-pie text-emerald-400 text-2xl"></i>
           <div>
             <h1 class="text-base font-bold leading-tight">Control Financiero</h1>
-            <p class="text-[11px] text-emerald-400 font-medium">Mate y Lau <span id="syncStatus" class="text-[9px] text-amber-300 font-bold ml-1">(Conectando nube...)</span></p>
+            <p class="text-[11px] text-emerald-400 font-medium">Mate y Lau <span class="text-[9px] text-emerald-400 font-bold ml-1">(Sistema Activo)</span></p>
           </div>
         </div>
         <div class="flex items-center gap-3">
-          <button onclick="sincronizarDesdeNube()" class="bg-slate-800 hover:bg-slate-700 text-white px-2.5 py-1.5 rounded text-xs font-bold transition flex items-center gap-1">
-            <i class="fa-solid fa-rotate"></i> Actualizar
-          </button>
           <button onclick="cambiarPestana('ventas')" class="bg-emerald-600 hover:bg-emerald-700 text-white px-3 py-1.5 rounded-lg text-xs font-bold shadow flex items-center gap-1.5 transition">
             <i class="fa-solid fa-plus"></i> + Registrar Venta
           </button>
@@ -441,8 +438,6 @@
       pin: "1234"
     };
 
-    const FIREBASE_DB_URL = 'https://control-mate-y-lau-84d9c-default-rtdb.firebaseio.com/datos.json';
-
     let lumbreDesbloqueado = false;
     let ultimaVentaRegistrada = null;
 
@@ -489,7 +484,11 @@
       document.getElementById('cfgUsuario').value = credenciales.user;
       document.getElementById('cfgPassword').value = credenciales.pass;
       document.getElementById('cfgPin').value = credenciales.pin;
-      sincronizarDesdeNube();
+      
+      renderizarDashboard();
+      renderizarInventario();
+      renderizarHistorial();
+      cargarSelectProductosVenta();
     }
 
     function cambiarFiltroDashboard() {
@@ -526,52 +525,6 @@
       renderizarInventario();
       renderizarHistorial();
       cargarSelectProductosVenta();
-
-      const statusEl = document.getElementById('syncStatus');
-      statusEl.textContent = '(Guardando en la nube...)';
-      statusEl.className = "text-[9px] text-amber-300 font-bold ml-1";
-
-      fetch(FIREBASE_DB_URL, {
-        method: 'PUT',
-        body: JSON.stringify(datos)
-      })
-      .then(() => {
-        statusEl.textContent = '(Sincronizado en Nube 👌)';
-        statusEl.className = "text-[9px] text-emerald-400 font-bold ml-1";
-      })
-      .catch(() => {
-        statusEl.textContent = '(Modo Local)';
-        statusEl.className = "text-[9px] text-slate-400 ml-1";
-      });
-    }
-
-    function sincronizarDesdeNube() {
-      const statusEl = document.getElementById('syncStatus');
-      statusEl.textContent = '(Cargando nube...)';
-      statusEl.className = "text-[9px] text-amber-300 font-bold ml-1";
-
-      fetch(FIREBASE_DB_URL)
-      .then(res => res.json())
-      .then(data => {
-        if (data && data.productos) {
-          datos = data;
-          localStorage.setItem('SISTEMA_FINANCIERO_DATOS_V4', JSON.stringify(datos));
-        }
-        renderizarDashboard();
-        renderizarInventario();
-        renderizarHistorial();
-        cargarSelectProductosVenta();
-        statusEl.textContent = '(Sincronizado en Nube 👌)';
-        statusEl.className = "text-[9px] text-emerald-400 font-bold ml-1";
-      })
-      .catch(() => {
-        statusEl.textContent = '(Modo Local)';
-        statusEl.className = "text-[9px] text-slate-400 ml-1";
-        renderizarDashboard();
-        renderizarInventario();
-        renderizarHistorial();
-        cargarSelectProductosVenta();
-      });
     }
 
     function cambiarPestana(pestana) {
