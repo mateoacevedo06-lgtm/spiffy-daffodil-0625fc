@@ -403,7 +403,7 @@
               <label class="block text-xs font-semibold text-slate-600 mb-1">Tipo de Movimiento</label>
               <select id="gastoTipoOp" class="w-full p-2.5 border rounded-lg bg-slate-50 text-sm font-bold text-slate-800" required>
                 <option value="Gasto">🔴 Gasto Operativo / Salida de Dinero</option>
-                <option value="Devolucion">🟢 Devolución / Reembolso (Resta en Caja)</option>
+                <option value="Devolucion">🟢 Devolución / Reembolso (Entrada de dinero)</option>
               </select>
             </div>
             <div>
@@ -424,7 +424,7 @@
                 <input type="number" id="gastoMonto" min="0" step="any" class="w-full p-2.5 border rounded-lg text-sm" required>
               </div>
               <div>
-                <label class="block text-xs font-semibold text-slate-600 mb-1">Pagado con</label>
+                <label class="block text-xs font-semibold text-slate-600 mb-1">Medio de pago</label>
                 <select id="gastoMetodo" class="w-full p-2.5 border rounded-lg bg-slate-50 text-sm" required>
                   <option value="Efectivo">Efectivo</option>
                   <option value="Nequi">Nequi</option>
@@ -800,6 +800,12 @@
     const normalizarMetodo = m => (!m || String(m).startsWith('Efectivo')) ? 'Efectivo' : m;
 
     const suma = (lista, fn) => lista.reduce((acc, x) => acc + (Number(fn(x)) || 0), 0);
+
+    // Valor con signo de un registro de caja: Gasto = negativo, Devolución = positivo.
+    // También funciona con los gastos viejos (guardados en positivo y sin marca de devolución).
+    const valorCaja = g => g.esDevolucion
+      ? Math.abs(Number(g.monto) || 0)
+      : -Math.abs(Number(g.monto) || 0);
 
     function conTiempo(promesa, ms) {
       return Promise.race([promesa, new Promise((_, rej) => setTimeout(() => rej(new Error('tiempo')), ms))]);
@@ -1381,13 +1387,16 @@
       e.preventDefault();
       const tipoOp = $('gastoTipoOp').value;
       const esDev = tipoOp === 'Devolucion';
-      const montoVal = Math.abs(parseFloat($('gastoMonto').value) || 0);
+      const montoAbs = Math.abs(parseFloat($('gastoMonto').value) || 0);
+      if (!montoAbs) { alert('Escribe el monto'); return; }
+      // Gasto = negativo (sale plata) · Devolución = positivo (entra plata)
+      const montoVal = esDev ? montoAbs : -montoAbs;
 
       const gasto = {
         id: Date.now(),
         fecha: fechaHoy(),
         tipo: esDev ? 'Devolución' : 'Gasto Caja',
-        esDevolucion: esDev, // Bandera para saber que debe restar
+        esDevolucion: esDev, // true = entra plata, false = sale plata
         metodoPago: $('gastoMetodo').value,
         categoria: $('gastoCat').value,
         descripcion: $('gastoConcepto').value.trim(),
@@ -1544,8 +1553,13 @@
       $('tablaHistorial').innerHTML = ops.map(op => {
         const esVenta = op.tipoOp === 'Venta';
         const esAbono = op.tipoOp === 'Abono';
-        const colorTipo = esVenta ? 'bg-emerald-100 text-emerald-700' : esAbono ? 'bg-sky-100 text-sky-700' : 'bg-rose-100 text-rose-700';
-        const colorMonto = esVenta ? 'text-emerald-600' : esAbono ? 'text-sky-600' : 'text-rose-600';
+        const esDevol = op.tipoOp === 'Gasto' && op.esDevolucion;
+        const colorTipo = esVenta || esDevol ? 'bg-emerald-100 text-emerald-700' : esAbono ? 'bg-sky-100 text-sky-700' : 'bg-rose-100 text-rose-700';
+        const colorMonto = esVenta || esDevol ? 'text-emerald-600' : esAbono ? 'text-sky-600' : 'text-rose-600';
+        // Gastos en negativo (rojo) y devoluciones en positivo (verde)
+        const montoTxt = op.tipoOp === 'Gasto'
+          ? (esDevol ? '+' + dinero(valorCaja(op)) : dinero(valorCaja(op)))
+          : dinero(op.monto);
         let badge;
         if (esVenta && op.credito) {
           const c = estado.cuentas[op.cuentaId];
@@ -1562,7 +1576,7 @@
             <td class="p-3 whitespace-nowrap"><span class="px-2 py-0.5 rounded text-[10px] font-bold ${colorTipo}">${esc(op.tipo)}</span> ${badge}</td>
             <td class="p-3 text-slate-500">${esc(op.cats.join(', '))}</td>
             <td class="p-3 text-slate-800">${esc(op.descripcion)}</td>
-            <td class="p-3 text-right font-bold ${colorMonto}">${dinero(op.monto)}</td>
+            <td class="p-3 text-right font-bold ${colorMonto}">${montoTxt}</td>
             <td class="p-3 text-right"><button onclick="eliminarOperacion('${op._key}', '${op.tipoOp}')" class="text-rose-500" title="Eliminar"><i class="fa-solid fa-trash"></i></button></td>
           </tr>`;
       }).join('') || '<tr><td colspan="6" class="p-4 text-center text-slate-400">Sin operaciones</td></tr>';
@@ -1694,7 +1708,7 @@
       const ventas      = suma(movs, m => m.monto);
       const costoVentas = suma(movs, m => m.costoTotal);
       const ganancia    = ventas - costoVentas;
-      const totalGastos = suma(gas, g => g.monto);
+      const totalGastos = -suma(gas, valorCaja);   // gastos netos: 20.000 de gasto − 20.000 de devolución = 0
       const utilidad    = ganancia - totalGastos;
       const nVentas     = new Set(movs.map(m => m.grupo || m.id)).size;
 
@@ -1747,14 +1761,14 @@
 
       const filas = METODOS.map(metodo => {
         const entro = suma(entradas.filter(m => normalizarMetodo(m.metodoPago) === metodo), m => m.monto);
-        const salio = suma(gas.filter(g => normalizarMetodo(g.metodoPago) === metodo), g => g.monto);
+        const salio = -suma(gas.filter(g => normalizarMetodo(g.metodoPago) === metodo), valorCaja);
         return { metodo, entro, salio, neto: entro - salio };
       });
       const total = { entro: suma(filas, f => f.entro), salio: suma(filas, f => f.salio), neto: suma(filas, f => f.neto) };
 
       const iconos = { Efectivo: '💵', Nequi: '🟣', Bancolombia: '🟡', Daviplata: '🔴' };
       const colorNeto = n => n < 0 ? 'text-rose-600' : 'text-slate-800';
-      const salida = v => v ? '-' + dinero(v) : dinero(0);
+      const salida = v => v > 0 ? '-' + dinero(v) : v < 0 ? '+' + dinero(-v) : dinero(0);
 
       $('tablaCuadre').innerHTML = filas.map(f => `
         <tr class="fila-metodo ${filtroMovMetodo === f.metodo ? 'elegida' : ''}" onclick="elegirMetodoMov('${f.metodo}')">
@@ -1780,8 +1794,9 @@
         .filter(x => filtroMovMetodo === 'Todos' || normalizarMetodo(x.metodoPago) === filtroMovMetodo)
         .sort((a, b) => (b.id || 0) - (a.id || 0));
 
-      const entra = suma(lista.filter(x => x.tipoMov !== 'gastos'), x => x.monto);
-      const sale  = suma(lista.filter(x => x.tipoMov === 'gastos'), x => x.monto);
+      const conSigno = x => x.tipoMov === 'gastos' ? valorCaja(x) : (Number(x.monto) || 0);
+      const entra = suma(lista, x => Math.max(0, conSigno(x)));
+      const sale  = suma(lista, x => Math.max(0, -conSigno(x)));
       $('movResumen').innerHTML = lista.length
         ? `${lista.length} ${lista.length === 1 ? 'movimiento' : 'movimientos'}${filtroMovMetodo !== 'Todos' ? ' en <b>' + filtroMovMetodo + '</b>' : ''} · entró <b class="text-emerald-600">${dinero(entra)}</b> · salió <b class="text-rose-600">${dinero(sale)}</b>`
         : '';
@@ -1789,10 +1804,11 @@
       const estilo = {
         ventas: { etiqueta: 'Venta', clase: 'bg-emerald-100 text-emerald-700', signo: '+', color: 'text-emerald-600' },
         abonos: { etiqueta: 'Abono', clase: 'bg-sky-100 text-sky-700',         signo: '+', color: 'text-sky-600' },
-        gastos: { etiqueta: 'Gasto de caja', clase: 'bg-rose-100 text-rose-700', signo: '−', color: 'text-rose-600' }
+        gastos: { etiqueta: 'Gasto de caja', clase: 'bg-rose-100 text-rose-700', signo: '−', color: 'text-rose-600' },
+        devolucion: { etiqueta: 'Devolución', clase: 'bg-emerald-100 text-emerald-700', signo: '+', color: 'text-emerald-600' }
       };
       $('listaMov').innerHTML = lista.map(x => {
-        const e = estilo[x.tipoMov];
+        const e = estilo[x.tipoMov === 'gastos' && x.esDevolucion ? 'devolucion' : x.tipoMov];
         return `
         <div class="flex justify-between items-start gap-3 py-2.5">
           <div class="min-w-0">
@@ -1803,7 +1819,7 @@
             </div>
             <div class="text-slate-700 mt-1 break-words">${esc(x.descripcion)}${x.parcial ? ' <span class="text-slate-400">(parte de ' + esc(cat) + ')</span>' : ''}</div>
           </div>
-          <div class="font-bold whitespace-nowrap ${e.color}">${e.signo}${dinero(x.monto)}</div>
+          <div class="font-bold whitespace-nowrap ${e.color}">${e.signo}${dinero(Math.abs(Number(x.monto) || 0))}</div>
         </div>`;
       }).join('') || '<p class="text-slate-400 text-center py-4">No hay movimientos con estos filtros</p>';
     }
@@ -1833,7 +1849,7 @@
         fila('Vendido', dinero(ventas), 'font-semibold text-slate-800') +
         fila('− Costo de los productos', '-' + dinero(costo), 'text-amber-600', 'Lo que te costaron los productos vendidos') +
         fila('= Ganancia bruta' + margen, dinero(ganancia), 'font-semibold text-blue-600') +
-        fila('− Gastos', '-' + dinero(gastosT), 'text-rose-600', 'Bolsas, transporte, empaques...') +
+        fila('− Gastos (menos devoluciones)', dinero(-gastosT), 'text-rose-600', 'Bolsas, transporte, empaques...') +
         fila('= Te quedó', dinero(utilidad), `font-bold text-base ${utilidad < 0 ? 'text-rose-600' : 'text-emerald-600'}`);
 
       renderizarGrafico([ventas, costo, gastosT, utilidad]);
