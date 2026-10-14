@@ -1380,17 +1380,14 @@
     async function guardarGastoCaja(e) {
       e.preventDefault();
       const tipoOp = $('gastoTipoOp').value;
-      let montoVal = parseFloat($('gastoMonto').value);
-
-      // Si es devolución, guardamos el monto con signo negativo para que reste en los cálculos automáticamente
-      if (tipoOp === 'Devolucion') {
-        montoVal = -Math.abs(montoVal);
-      }
+      const esDev = tipoOp === 'Devolucion';
+      const montoVal = Math.abs(parseFloat($('gastoMonto').value) || 0);
 
       const gasto = {
         id: Date.now(),
         fecha: fechaHoy(),
-        tipo: tipoOp === 'Devolucion' ? 'Devolución' : 'Gasto Caja',
+        tipo: esDev ? 'Devolución' : 'Gasto Caja',
+        esDevolucion: esDev, // Bandera para saber que debe restar
         metodoPago: $('gastoMetodo').value,
         categoria: $('gastoCat').value,
         descripcion: $('gastoConcepto').value.trim(),
