@@ -1382,6 +1382,7 @@
       const tipoOp = $('gastoTipoOp').value;
       let montoVal = parseFloat($('gastoMonto').value);
 
+      // Si es devolución, guardamos el monto con signo negativo para que reste en los cálculos automáticamente
       if (tipoOp === 'Devolucion') {
         montoVal = -Math.abs(montoVal);
       }
@@ -1395,6 +1396,7 @@
         descripcion: $('gastoConcepto').value.trim(),
         monto: montoVal
       };
+      
       const form = e.target;
       try {
         await conTiempo(refRaiz.child('gastosCaja').push(gasto), 10000);
@@ -1402,7 +1404,7 @@
         alert('Operación registrada con éxito');
       } catch (err) {
         form.reset();
-        alert('Operación guardada en este celular. Se subirá apenas haya internet.');
+        alert('Operación guardada localmente. Se sincronizará con internet.');
       }
     }
     // ---------------------------------------------------------
