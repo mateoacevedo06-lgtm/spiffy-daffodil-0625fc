@@ -7,17 +7,14 @@
   <link rel="manifest" href="manifest.json">
   <meta name="theme-color" content="#0f172a">
   
-  <!-- Tailwind CSS & FontAwesome -->
   <script src="https://cdn.tailwindcss.com"></script>
   <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
   <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
   
-  <!-- Tipografías para la Postal Navideña -->
   <link rel="preconnect" href="https://fonts.googleapis.com">
   <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
   <link href="https://fonts.googleapis.com/css2?family=Alex+Brush&family=Cinzel:wght@600;700&family=Lora:ital,wght@0,400;0,600;1,400&display=swap" rel="stylesheet">
 
-  <!-- Librerías para exportar PNG y PDF -->
   <script src="https://cdnjs.cloudflare.com/ajax/libs/html2canvas/1.4.1/html2canvas.min.js"></script>
   <script src="https://cdnjs.cloudflare.com/ajax/libs/jspdf/2.5.1/jspdf.umd.min.js"></script>
 
@@ -30,8 +27,6 @@
     .font-script { font-family: 'Alex Brush', cursive; }
     .font-serif-title { font-family: 'Cinzel', serif; }
     .font-body-carmel { font-family: 'Lora', serif; }
-
-    /* Fondo de la postal */
     .postal-bg-container {
       background-image: url('fondo-postal.jpg');
       background-size: cover;
@@ -44,7 +39,6 @@
 </head>
 <body class="bg-slate-100 text-slate-800 font-sans min-h-screen">
 
-  <!-- PANTALLA DE LOGIN -->
   <div id="loginSection" class="fixed inset-0 bg-slate-900 flex justify-center items-center p-4 z-50">
     <div class="bg-white rounded-2xl shadow-2xl p-8 max-w-sm w-full space-y-6 text-center">
       <div class="inline-flex items-center justify-center w-16 h-16 bg-emerald-100 text-emerald-600 rounded-full text-3xl mb-2">
@@ -71,9 +65,7 @@
     </div>
   </div>
 
-  <!-- INTERFAZ PRINCIPAL -->
   <div id="appSection" class="hidden">
-    <!-- Navbar -->
     <header class="bg-slate-900 text-white p-4 shadow-md sticky top-0 z-40">
       <div class="max-w-7xl mx-auto flex justify-between items-center">
         <div class="flex items-center space-x-3">
@@ -97,7 +89,6 @@
       </div>
     </header>
 
-    <!-- Menú Horizontal de Pestañas -->
     <nav class="bg-white border-b border-slate-200 sticky top-[60px] z-30 shadow-sm overflow-x-auto">
       <div class="max-w-7xl mx-auto flex text-sm">
         <button onclick="cambiarPestana('dashboard')" id="tab-dashboard" class="tab-btn active px-5 py-3 whitespace-nowrap flex items-center gap-2">
@@ -122,8 +113,6 @@
     </nav>
 
     <main class="max-w-7xl mx-auto p-4 space-y-6">
-
-      <!-- 1. DASHBOARD GENERAL -->
       <section id="sec-dashboard" class="space-y-6">
         <div class="bg-white p-4 rounded-xl shadow-sm border border-slate-200 flex flex-col sm:flex-row justify-between items-center gap-3">
           <span class="text-xs font-bold text-slate-600 uppercase">Filtrar Análisis Financiero:</span>
@@ -176,7 +165,6 @@
         </div>
       </section>
 
-      <!-- 2. REGISTRAR VENTA -->
       <section id="sec-ventas" class="hidden max-w-lg mx-auto">
         <div class="bg-white p-6 rounded-xl shadow-sm border border-slate-200 space-y-4">
           <h2 class="text-base font-bold text-slate-800 flex items-center gap-2">
@@ -224,7 +212,6 @@
         </div>
       </section>
 
-      <!-- 3. CAJA Y GASTOS OPERATIVOS -->
       <section id="sec-gastos-caja" class="hidden max-w-lg mx-auto">
         <div class="bg-white p-6 rounded-xl shadow-sm border border-slate-200 space-y-4">
           <h2 class="text-base font-bold text-slate-800 flex items-center gap-2">
@@ -254,7 +241,6 @@
         </div>
       </section>
 
-      <!-- 4. INVENTARIO GENERAL -->
       <section id="sec-inventario" class="hidden space-y-4">
         <div class="flex flex-col sm:flex-row justify-between items-start sm:items-center gap-3">
           <h2 class="text-base font-bold text-slate-800">Inventario General</h2>
@@ -297,7 +283,6 @@
         </div>
       </section>
 
-      <!-- 5. HISTORIAL DE TRANSACCIONES -->
       <section id="sec-historial" class="hidden space-y-4">
         <div class="flex justify-between items-center">
           <h2 class="text-base font-bold text-slate-800">Historial de Operaciones</h2>
@@ -326,7 +311,6 @@
         </div>
       </section>
 
-      <!-- 6. AJUSTES & CREDENCIALES -->
       <section id="sec-config" class="hidden max-w-lg mx-auto space-y-6">
         <div class="bg-white p-6 rounded-xl shadow-sm border border-slate-200 space-y-4">
           <h2 class="text-base font-bold text-slate-800 flex items-center gap-2">
@@ -356,78 +340,53 @@
           </form>
         </div>
       </section>
-
     </main>
 
-    <!-- MODAL POSTAL NAVIDEÑA -->
     <div id="modalPostal" class="fixed inset-0 bg-slate-900/85 backdrop-blur-md hidden flex justify-center items-center p-4 z-50 overflow-y-auto">
       <div class="flex flex-col items-center max-w-md w-full space-y-4 my-auto">
-        
-        <!-- LIENZO DE LA POSTAL -->
         <div id="postalRenderArea" class="postal-bg-container rounded-2xl shadow-2xl relative text-center text-[#21110b] flex flex-col justify-between overflow-hidden p-6">
-          
           <div class="pt-12 flex flex-col items-center">
             <h1 class="font-script text-5xl text-[#6d181c] leading-none mb-1">Mate y Lau</h1>
             <p class="text-[#6d181c] text-xs">♥</p>
           </div>
-
           <div class="space-y-3 my-auto py-2">
             <h2 class="font-script text-4xl text-[#6d181c] leading-none my-1">¡Gracias por tu compra!</h2>
-
             <div class="font-body-carmel text-xs leading-relaxed text-[#2b1e17] space-y-2 pt-2">
               <p id="postalSaludo" class="text-sm font-semibold text-[#1a3825]">Hola, Mateo Acevedo:</p>
-              <p class="text-[11px] px-3">
-                Nos hace muy felices que hayas elegido nuestros productos para acompañar tus momentos especiales.
-              </p>
-              <p class="text-[11px] px-3">
-                Que esta Navidad esté llena de amor, unión y recuerdos bonitos junto a quienes más quieres.
-              </p>
+              <p class="text-[11px] px-3">Nos hace muy felices que hayas elegido nuestros productos para acompañar tus momentos especiales.</p>
+              <p class="text-[11px] px-3">Que esta Navidad esté llena de amor, unión y recuerdos bonitos junto a quienes más quieres.</p>
             </div>
           </div>
-
           <div class="pb-3 flex flex-col items-center">
             <div class="flex items-center justify-center gap-2 text-[#c5a059] mb-2">
               <div class="h-[1px] w-8 bg-[#c5a059]/50"></div>
               <span class="text-xs">★</span>
               <div class="h-[1px] w-8 bg-[#c5a059]/50"></div>
             </div>
-
             <p class="font-body-carmel italic text-[11px] text-[#523e32]">Con cariño,</p>
             <h3 class="font-script text-4xl text-[#6d181c] leading-none my-1">Mate y Lau</h3>
             <p class="text-[9px] uppercase tracking-widest text-[#785928] font-bold block pt-1 border-t border-[#c5a059]/40 w-52 text-center">UNA NAVIDAD LLENA DE DETALLES</p>
             <p class="text-[#6d181c] text-[9px] mt-1">♥</p>
-            
             <div class="pt-3">
               <span class="inline-flex items-center gap-1 bg-[#f5ede0]/90 text-[#423328] text-[9px] font-mono px-3 py-0.5 rounded-full border border-[#d2c0a8]">
                 📅 <span id="postalFecha">2026-10-13</span>
               </span>
             </div>
           </div>
-
         </div>
-
-        <!-- Botones de Descarga -->
         <div class="flex flex-wrap gap-2 w-full print:hidden">
-          <button onclick="cerrarModal('modalPostal')" class="flex-1 py-2.5 bg-slate-800 hover:bg-slate-700 text-slate-300 font-bold rounded-xl text-xs transition">
-            Cerrar
-          </button>
-          <button id="btnDescargarPNG" onclick="descargarPostalPNG()" class="flex-1 py-2.5 bg-emerald-600 hover:bg-emerald-700 text-white font-bold rounded-xl text-xs shadow-lg flex items-center justify-center gap-1.5 transition">
-            <i class="fa-solid fa-image"></i> Descargar PNG
-          </button>
-          <button id="btnDescargarPDF" onclick="descargarPostalPDF()" class="py-2.5 px-4 bg-rose-700 hover:bg-rose-800 text-white font-bold rounded-xl text-xs shadow-lg flex items-center justify-center gap-1.5 transition">
-            <i class="fa-solid fa-file-pdf"></i> PDF
-          </button>
+          <button onclick="cerrarModal('modalPostal')" class="flex-1 py-2.5 bg-slate-800 hover:bg-slate-700 text-slate-300 font-bold rounded-xl text-xs transition">Cerrar</button>
+          <button id="btnDescargarPNG" onclick="descargarPostalPNG()" class="flex-1 py-2.5 bg-emerald-600 hover:bg-emerald-700 text-white font-bold rounded-xl text-xs shadow-lg flex items-center justify-center gap-1.5 transition"><i class="fa-solid fa-image"></i> Descargar PNG</button>
+          <button id="btnDescargarPDF" onclick="descargarPostalPDF()" class="py-2.5 px-4 bg-rose-700 hover:bg-rose-800 text-white font-bold rounded-xl text-xs shadow-lg flex items-center justify-center gap-1.5 transition"><i class="fa-solid fa-file-pdf"></i> PDF</button>
         </div>
-
       </div>
     </div>
 
-    <!-- MODAL CARGA MASIVA -->
     <div id="modalPlano" class="fixed inset-0 bg-slate-900/50 backdrop-blur-sm hidden flex justify-center items-center p-4 z-50">
       <div class="bg-white rounded-xl p-5 max-w-md w-full space-y-3">
         <h3 class="font-bold text-slate-800 text-sm">Carga Masiva de Productos</h3>
         <p class="text-xs text-slate-500">Pega tu lista separada por comas (Nombre, Categoría, Costo, Precio, Stock):</p>
-        <textarea id="txtPlano" rows="5" class="w-full p-2.5 border rounded-lg text-xs font-mono" placeholder="Gorro Navideño, Navidad, 5000, 12000, 10&#10;Aceite Lumbre, Origen Lumbre, 8000, 18000, 5"></textarea>
+        <textarea id="txtPlano" rows="5" class="w-full p-2.5 border rounded-lg text-xs font-mono" placeholder="Gorro Navideño, Navidad, 5000, 12000, 10"></textarea>
         <div class="flex justify-end gap-2 pt-2">
           <button type="button" onclick="cerrarModal('modalPlano')" class="px-3 py-1.5 border rounded text-xs">Cancelar</button>
           <button type="button" onclick="procesarPlanoMasivo()" class="px-3 py-1.5 bg-slate-900 text-white rounded font-bold text-xs">Cargar Productos</button>
@@ -435,7 +394,6 @@
       </div>
     </div>
 
-    <!-- MODAL PRODUCTO -->
     <div id="modalProducto" class="fixed inset-0 bg-slate-900/50 backdrop-blur-sm hidden flex justify-center items-center p-4 z-50">
       <div class="bg-white rounded-xl p-5 max-w-sm w-full space-y-3">
         <h3 id="modalProductoTitulo" class="font-bold text-slate-800 text-sm">Nuevo Producto</h3>
@@ -444,7 +402,7 @@
           <input type="text" id="prodNombre" placeholder="Nombre del Producto" class="w-full p-2 border rounded" required>
           <select id="prodCategoria" class="w-full p-2 border rounded" required>
             <option value="Navidad">Navidad</option>
-            <option value="Origen Lumbre">Comercial / Lumbre</option>
+            <option value="Origen Lumbre">Comercial / Origen Lumbre</option>
           </select>
           <div class="grid grid-cols-2 gap-2">
             <input type="number" id="prodCosto" placeholder="Costo ($)" class="w-full p-2 border rounded" required>
@@ -459,7 +417,6 @@
       </div>
     </div>
 
-    <!-- MODAL PIN DISCRETO -->
     <div id="modalPin" class="fixed inset-0 bg-slate-900/80 backdrop-blur-md hidden flex justify-center items-center p-4 z-50">
       <div class="bg-white rounded-2xl p-6 max-w-xs w-full space-y-4 text-center shadow-2xl">
         <h3 class="font-bold text-slate-800 text-base">Ingresa tu PIN de 4 dígitos</h3>
@@ -471,7 +428,6 @@
         </div>
       </div>
     </div>
-
   </div>
 
   <script>
@@ -485,7 +441,6 @@
       pin: "1234"
     };
 
-    // BASE DE DATOS NUBE GOOGLE FIREBASE EN TIEMPO REAL (CORREGIDA)
     const FIREBASE_DB_URL = 'https://control-mate-y-lau-84d9c-default-rtdb.firebaseio.com/datos.json';
 
     let lumbreDesbloqueado = false;
@@ -534,7 +489,6 @@
       document.getElementById('cfgUsuario').value = credenciales.user;
       document.getElementById('cfgPassword').value = credenciales.pass;
       document.getElementById('cfgPin').value = credenciales.pin;
-      
       sincronizarDesdeNube();
     }
 
@@ -579,10 +533,8 @@
 
       fetch(FIREBASE_DB_URL, {
         method: 'PUT',
-        headers: { 'Content-Type': 'application/json' },
         body: JSON.stringify(datos)
       })
-      .then(res => res.json())
       .then(() => {
         statusEl.textContent = '(Sincronizado en Nube 👌)';
         statusEl.className = "text-[9px] text-emerald-400 font-bold ml-1";
@@ -622,7 +574,6 @@
       });
     }
 
-    // Funciones de UI y lógica de la aplicación
     function cambiarPestana(pestana) {
       ['dashboard', 'ventas', 'gastos-caja', 'inventario', 'historial', 'config'].forEach(p => {
         document.getElementById('sec-' + p).classList.add('hidden');
