@@ -27,7 +27,7 @@
     .font-body-carmel { font-family: 'Lora', serif; }
     .postal-bg-container {
       background-image: url('fondo-postal.jpg');
-      background-color: #f8f1e4; /* respaldo si no carga la imagen */
+      background-color: #f8f1e4;
       background-size: cover;
       background-position: center;
       width: 420px;
@@ -35,6 +35,7 @@
       min-height: 640px;
       box-sizing: border-box;
     }
+    button:disabled { opacity: .5; cursor: not-allowed; }
   </style>
 </head>
 <body class="bg-slate-100 text-slate-800 font-sans min-h-screen">
@@ -54,14 +55,14 @@
       <form onsubmit="validarLogin(event)" class="space-y-4 text-left">
         <div>
           <label class="block text-xs font-semibold text-slate-600 mb-1">Usuario</label>
-          <input type="text" id="loginUser" autocomplete="username" class="w-full p-3 border rounded-lg text-sm outline-none focus:ring-2 focus:ring-emerald-500" required>
+          <input type="text" id="loginUser" autocomplete="username" autocapitalize="off" class="w-full p-3 border rounded-lg text-sm outline-none focus:ring-2 focus:ring-emerald-500" required>
         </div>
         <div>
           <label class="block text-xs font-semibold text-slate-600 mb-1">Contraseña</label>
           <input type="password" id="loginPass" autocomplete="current-password" class="w-full p-3 border rounded-lg text-sm outline-none focus:ring-2 focus:ring-emerald-500" required>
         </div>
         <p id="loginError" class="text-xs text-rose-500 font-semibold hidden text-center">Credenciales incorrectas</p>
-        <button type="submit" class="w-full bg-slate-900 hover:bg-slate-800 text-white font-bold py-3 rounded-lg shadow-lg transition">Ingresar</button>
+        <button type="submit" id="btnLogin" class="w-full bg-slate-900 hover:bg-slate-800 text-white font-bold py-3 rounded-lg shadow-lg transition">Ingresar</button>
       </form>
     </div>
   </div>
@@ -139,7 +140,10 @@
               <input type="date" id="dashFiltroHasta" onchange="renderizarDashboard()" class="bg-transparent outline-none font-semibold text-slate-800 w-full">
             </div>
           </div>
-          <button onclick="limpiarFiltrosDashboard()" class="bg-slate-200 hover:bg-slate-300 text-slate-700 px-3 py-2 rounded-lg text-xs font-bold transition self-end lg:self-center">Limpiar Filtros</button>
+          <div class="flex gap-2 self-end lg:self-center">
+            <button onclick="verHoy()" class="bg-emerald-100 hover:bg-emerald-200 text-emerald-800 px-3 py-2 rounded-lg text-xs font-bold transition">Hoy</button>
+            <button onclick="limpiarFiltrosDashboard()" class="bg-slate-200 hover:bg-slate-300 text-slate-700 px-3 py-2 rounded-lg text-xs font-bold transition">Limpiar</button>
+          </div>
         </div>
 
         <div class="grid grid-cols-2 md:grid-cols-4 gap-4">
@@ -176,56 +180,85 @@
           </div>
         </div>
 
+        <!-- Cuadre de caja -->
+        <div class="bg-white p-5 rounded-xl shadow-sm border border-slate-200">
+          <div class="flex justify-between items-start gap-2 mb-1">
+            <h3 class="text-sm font-bold text-slate-700 flex items-center gap-2"><i class="fa-solid fa-cash-register text-emerald-600"></i> Cuadre de Caja por Método de Pago</h3>
+          </div>
+          <p id="cuadreRango" class="text-[11px] text-slate-500 mb-3"></p>
+          <div class="overflow-x-auto">
+            <table class="w-full text-left text-xs">
+              <thead class="bg-slate-50 border-b uppercase text-slate-500">
+                <tr><th class="p-2.5">Método</th><th class="p-2.5 text-right">Entró (ventas)</th><th class="p-2.5 text-right">Salió (gastos)</th><th class="p-2.5 text-right">Debe haber</th></tr>
+              </thead>
+              <tbody id="tablaCuadre" class="divide-y divide-slate-100"></tbody>
+            </table>
+          </div>
+        </div>
+
         <div class="bg-white p-5 rounded-xl shadow-sm border border-slate-200">
           <h3 class="text-sm font-bold text-slate-700 mb-4">Comportamiento Financiero</h3>
           <div class="h-60"><canvas id="graficoDashboard"></canvas></div>
         </div>
       </section>
 
-      <!-- ===================== REGISTRAR VENTA ===================== -->
-      <section id="sec-ventas" class="hidden max-w-lg mx-auto">
-        <div class="bg-white p-6 rounded-xl shadow-sm border border-slate-200 space-y-4">
+      <!-- ===================== REGISTRAR VENTA (CARRITO) ===================== -->
+      <section id="sec-ventas" class="hidden max-w-lg mx-auto space-y-4">
+        <div class="bg-white p-6 rounded-xl shadow-sm border border-slate-200 space-y-3">
           <h2 class="text-base font-bold text-slate-800 flex items-center gap-2"><i class="fa-solid fa-cart-shopping text-emerald-600"></i> Registrar Venta</h2>
-          <form onsubmit="guardarVenta(event)" class="space-y-3">
+          <div>
+            <label class="block text-xs font-semibold text-slate-600 mb-1">Categoría</label>
+            <select id="ventaCat" onchange="cambiarCategoriaVenta()" class="w-full p-2.5 border rounded-lg bg-slate-50 text-sm">
+              <option value="Navidad">Navidad</option>
+              <option value="Origen Lumbre">Comercial / Origen Lumbre</option>
+            </select>
+          </div>
+          <div>
+            <label class="block text-xs font-semibold text-slate-600 mb-1">Buscar y Seleccionar Producto</label>
+            <input type="text" id="ventaBusqueda" oninput="actualizarBuscadorVenta()" placeholder="Escribe para buscar..." class="w-full p-2.5 border rounded-lg text-xs mb-1 bg-slate-50">
+            <select id="ventaProdId" onchange="actualizarPrecioVenta()" class="w-full p-2.5 border rounded-lg text-sm">
+              <option value="">-- Seleccionar --</option>
+            </select>
+          </div>
+          <div class="grid grid-cols-2 gap-3">
             <div>
-              <label class="block text-xs font-semibold text-slate-600 mb-1">Categoría</label>
-              <select id="ventaCat" onchange="actualizarBuscadorVenta()" class="w-full p-2.5 border rounded-lg bg-slate-50 text-sm" required>
-                <option value="Navidad">Navidad</option>
-                <option value="Origen Lumbre">Comercial / Origen Lumbre</option>
-              </select>
-            </div>
-            <div>
-              <label class="block text-xs font-semibold text-slate-600 mb-1">Buscar y Seleccionar Producto</label>
-              <input type="text" id="ventaBusqueda" oninput="actualizarBuscadorVenta()" placeholder="Escribe para buscar..." class="w-full p-2.5 border rounded-lg text-xs mb-1 bg-slate-50">
-              <select id="ventaProdId" onchange="actualizarPrecioVenta()" class="w-full p-2.5 border rounded-lg text-sm" required>
-                <option value="">-- Seleccionar --</option>
-              </select>
-            </div>
-            <div class="grid grid-cols-2 gap-3">
-              <div>
-                <label class="block text-xs font-semibold text-slate-600 mb-1">Precio Unitario ($)</label>
-                <input type="number" id="ventaPrecio" min="0" step="any" class="w-full p-2.5 border rounded-lg text-sm" required>
-              </div>
-              <div>
-                <label class="block text-xs font-semibold text-slate-600 mb-1">Cantidad</label>
-                <input type="number" id="ventaCantidad" min="1" value="1" class="w-full p-2.5 border rounded-lg text-sm" required>
-              </div>
+              <label class="block text-xs font-semibold text-slate-600 mb-1">Precio Unitario ($)</label>
+              <input type="number" id="ventaPrecio" min="0" step="any" class="w-full p-2.5 border rounded-lg text-sm">
             </div>
             <div>
-              <label class="block text-xs font-semibold text-slate-600 mb-1">Método de Pago</label>
-              <select id="ventaMetodoPago" class="w-full p-2.5 border rounded-lg bg-slate-50 text-sm font-semibold" required>
-                <option value="Efectivo">Efectivo</option>
-                <option value="Nequi">Nequi</option>
-                <option value="Bancolombia">Bancolombia</option>
-                <option value="Daviplata">Daviplata</option>
-              </select>
+              <label class="block text-xs font-semibold text-slate-600 mb-1">Cantidad</label>
+              <input type="number" id="ventaCantidad" min="1" value="1" class="w-full p-2.5 border rounded-lg text-sm">
             </div>
-            <div>
-              <label class="block text-xs font-semibold text-slate-600 mb-1">Nombre del Cliente</label>
-              <input type="text" id="ventaCliente" placeholder="Ej. Juan Pérez (Opcional)" class="w-full p-2.5 border rounded-lg text-sm">
-            </div>
-            <button type="submit" class="w-full bg-emerald-600 hover:bg-emerald-700 text-white font-bold py-3 rounded-lg shadow transition">Completar Venta</button>
-          </form>
+          </div>
+          <button type="button" onclick="agregarAlCarrito()" class="w-full bg-slate-900 hover:bg-slate-800 text-white font-bold py-2.5 rounded-lg shadow transition flex items-center justify-center gap-2">
+            <i class="fa-solid fa-cart-plus"></i> Agregar al carrito
+          </button>
+        </div>
+
+        <div class="bg-white p-6 rounded-xl shadow-sm border border-slate-200 space-y-3">
+          <h3 class="text-sm font-bold text-slate-800 flex items-center justify-between">
+            <span><i class="fa-solid fa-basket-shopping text-emerald-600"></i> Carrito</span>
+            <span id="carritoConteo" class="text-[11px] text-slate-500 font-semibold">0 productos</span>
+          </h3>
+          <div id="listaCarrito" class="divide-y divide-slate-100 text-xs"></div>
+          <div class="flex justify-between items-center border-t pt-3">
+            <span class="text-xs font-bold uppercase text-slate-500">Total</span>
+            <span id="carritoTotal" class="text-xl font-bold text-emerald-600">$0</span>
+          </div>
+          <div>
+            <label class="block text-xs font-semibold text-slate-600 mb-1">Método de Pago</label>
+            <select id="ventaMetodoPago" class="w-full p-2.5 border rounded-lg bg-slate-50 text-sm font-semibold">
+              <option value="Efectivo">Efectivo</option>
+              <option value="Nequi">Nequi</option>
+              <option value="Bancolombia">Bancolombia</option>
+              <option value="Daviplata">Daviplata</option>
+            </select>
+          </div>
+          <div>
+            <label class="block text-xs font-semibold text-slate-600 mb-1">Nombre del Cliente</label>
+            <input type="text" id="ventaCliente" placeholder="Ej. Juan Pérez (Opcional)" class="w-full p-2.5 border rounded-lg text-sm">
+          </div>
+          <button type="button" id="btnCompletarVenta" onclick="completarVenta()" disabled class="w-full bg-emerald-600 hover:bg-emerald-700 text-white font-bold py-3 rounded-lg shadow transition">Completar Venta</button>
 
           <div id="contenedorBotonPostal" class="hidden border-t pt-4 text-center">
             <button onclick="abrirModalPostal()" class="w-full bg-gradient-to-r from-rose-700 to-emerald-800 hover:from-rose-800 hover:to-emerald-900 text-white font-bold py-3 rounded-lg shadow-md flex items-center justify-center gap-2 transition">
@@ -252,9 +285,20 @@
               <label class="block text-xs font-semibold text-slate-600 mb-1">Concepto / Detalle</label>
               <input type="text" id="gastoConcepto" placeholder="Ej. Paquete de bolsas, Cinta" class="w-full p-2.5 border rounded-lg text-sm" required>
             </div>
-            <div>
-              <label class="block text-xs font-semibold text-slate-600 mb-1">Monto ($)</label>
-              <input type="number" id="gastoMonto" min="0" step="any" class="w-full p-2.5 border rounded-lg text-sm" required>
+            <div class="grid grid-cols-2 gap-3">
+              <div>
+                <label class="block text-xs font-semibold text-slate-600 mb-1">Monto ($)</label>
+                <input type="number" id="gastoMonto" min="0" step="any" class="w-full p-2.5 border rounded-lg text-sm" required>
+              </div>
+              <div>
+                <label class="block text-xs font-semibold text-slate-600 mb-1">Pagado con</label>
+                <select id="gastoMetodo" class="w-full p-2.5 border rounded-lg bg-slate-50 text-sm" required>
+                  <option value="Efectivo">Efectivo</option>
+                  <option value="Nequi">Nequi</option>
+                  <option value="Bancolombia">Bancolombia</option>
+                  <option value="Daviplata">Daviplata</option>
+                </select>
+              </div>
             </div>
             <button type="submit" class="w-full bg-rose-600 hover:bg-rose-700 text-white font-bold py-3 rounded-lg shadow transition">Registrar Gasto</button>
           </form>
@@ -325,6 +369,7 @@
       <section id="sec-config" class="hidden max-w-lg mx-auto space-y-6">
         <div class="bg-white p-6 rounded-xl shadow-sm border border-slate-200 space-y-4">
           <h2 class="text-base font-bold text-slate-800 flex items-center gap-2"><i class="fa-solid fa-key text-amber-600"></i> Cambiar Usuario, Contraseña y PIN</h2>
+          <p class="text-[11px] text-slate-500">Los cambios aplican en <b>todos los celulares</b> al mismo tiempo.</p>
           <form onsubmit="guardarNuevasCredenciales(event)" class="space-y-3">
             <div>
               <label class="block text-xs font-semibold text-slate-600 mb-1">Contraseña o PIN Actual (Obligatorio)</label>
@@ -333,7 +378,7 @@
             <hr class="my-2">
             <div>
               <label class="block text-xs font-semibold text-slate-600 mb-1">Nuevo Usuario Principal</label>
-              <input type="text" id="cfgUsuario" class="w-full p-2.5 border rounded-lg text-xs" required>
+              <input type="text" id="cfgUsuario" autocapitalize="off" class="w-full p-2.5 border rounded-lg text-xs" required>
             </div>
             <div>
               <label class="block text-xs font-semibold text-slate-600 mb-1">Nueva Contraseña Principal</label>
@@ -341,7 +386,7 @@
             </div>
             <div>
               <label class="block text-xs font-semibold text-slate-600 mb-1">Nuevo PIN de 4 dígitos</label>
-              <input type="password" id="cfgPin" maxlength="4" pattern="\d{4}" inputmode="numeric" class="w-full p-2.5 border rounded-lg text-xs text-center font-bold tracking-widest" required>
+              <input type="password" id="cfgPin" maxlength="4" inputmode="numeric" class="w-full p-2.5 border rounded-lg text-xs text-center font-bold tracking-widest" required>
             </div>
             <p class="text-[11px] text-slate-500">💡 Anota tus nuevos datos en un lugar seguro antes de guardar.</p>
             <button type="submit" class="w-full bg-amber-500 hover:bg-amber-600 text-slate-900 font-bold py-2.5 rounded-lg text-xs transition">Guardar Cambios</button>
@@ -358,9 +403,36 @@
     <div id="modalPostal" class="fixed inset-0 bg-slate-900/85 backdrop-blur-md hidden flex justify-center items-center p-4 z-50 overflow-y-auto">
       <div class="flex flex-col items-center max-w-md w-full space-y-4 my-auto">
         <div id="postalRenderArea" class="postal-bg-container rounded-2xl shadow-2xl relative text-center text-[#21110b] flex flex-col justify-between overflow-hidden p-6">
-          <div class="pt-12 flex flex-col items-center">
-            <h1 class="font-script text-5xl text-[#6d181c] leading-none mb-1">Mate y Lau</h1>
-            <p class="text-[#6d181c] text-xs">♥</p>
+                   <div class="pt-8 flex flex-col items-center">
+            <!-- Estrella dorada -->
+            <span class="text-[#c5a059] text-lg leading-none mb-1">★</span>
+
+            <!-- Línea + dos pinos + línea -->
+            <div class="flex items-center gap-2 mb-2">
+              <div class="h-[1px] w-14 bg-[#6d181c]/60"></div>
+              <svg width="20" height="32" viewBox="0 0 20 32" fill="none" stroke="#6d181c" stroke-width="1.5" stroke-linejoin="round" stroke-linecap="round">
+                <path d="M10 2 L5 9 H8 L3 16 H7 L2 23 H18 L13 16 H17 L12 9 H15 Z"/>
+                <path d="M10 6 V23 M10 12 L7 15 M10 12 L13 15 M10 18 L6 21 M10 18 L14 21"/>
+                <path d="M10 23 V29"/>
+              </svg>
+              <svg width="17" height="27" viewBox="0 0 20 32" fill="none" stroke="#6d181c" stroke-width="1.6" stroke-linejoin="round" stroke-linecap="round">
+                <path d="M10 2 L5 9 H8 L3 16 H7 L2 23 H18 L13 16 H17 L12 9 H15 Z"/>
+                <path d="M10 6 V23 M10 12 L7 15 M10 12 L13 15 M10 18 L6 21 M10 18 L14 21"/>
+                <path d="M10 23 V29"/>
+              </svg>
+              <div class="h-[1px] w-14 bg-[#6d181c]/60"></div>
+            </div>
+
+            <!-- Nombre -->
+            <h1 class="font-script text-6xl text-[#6d181c] leading-none mb-3">Mate y Lau</h1>
+
+            <!-- Frase -->
+            <p class="font-serif-title text-[11px] text-[#6d181c] tracking-[0.25em] leading-relaxed text-center">
+              PEQUEÑOS DETALLES,<br>GRANDES MOMENTOS.
+            </p>
+
+            <!-- Corazón -->
+            <span class="text-[#6d181c] text-sm mt-1">♥</span>
           </div>
           <div class="space-y-3 my-auto py-2">
             <h2 class="font-script text-4xl text-[#6d181c] leading-none my-1">¡Gracias por tu compra!</h2>
@@ -409,7 +481,7 @@
       <div class="bg-white rounded-xl p-5 max-w-sm w-full space-y-3">
         <h3 id="modalProductoTitulo" class="font-bold text-slate-800 text-sm">Nuevo Producto</h3>
         <form onsubmit="guardarProductoModal(event)" class="space-y-2 text-xs">
-          <input type="hidden" id="prodEditId">
+          <input type="hidden" id="prodEditKey">
           <input type="text" id="prodNombre" placeholder="Nombre del Producto" class="w-full p-2 border rounded" required>
           <select id="prodCategoria" class="w-full p-2 border rounded" required>
             <option value="Navidad">Navidad</option>
@@ -449,36 +521,42 @@
   ========================================================== -->
   <script>
     // ---------------------------------------------------------
-    // 1. CONFIGURACIÓN (no cambiar: aquí están tus datos)
+    // 1. CONFIGURACIÓN
     // ---------------------------------------------------------
-    const CLAVE_DATOS        = 'SISTEMA_FINANCIERO_DATOS_V4';
-    const CLAVE_CREDENCIALES = 'CF_CREDENCIALES_V4';
-    const CLAVE_SESION       = 'CF_SESION_ACTIVA';
-
     const firebaseConfig = {
       databaseURL: "https://control-mate-y-lau-84d9c-default-rtdb.firebaseio.com"
     };
 
-    const CREDENCIALES_POR_DEFECTO = { user: "origenlumbre", pass: "navidad2026", pin: "1234" };
+    // Los datos nuevos viven en "datos_v5". La rama vieja "datos" NO se toca:
+    // queda como copia de respaldo de cómo estaba todo antes de esta versión.
+    const RAIZ        = 'datos_v5';
+    const RAIZ_VIEJA  = 'datos';
+    const CLAVE_CACHE = 'SISTEMA_FINANCIERO_DATOS_V5';
+    const CLAVE_CRED_LOCAL = 'CF_CREDENCIALES_V4';
+    const CLAVE_SESION     = 'CF_SESION_ACTIVA';
 
-    const DATOS_INICIALES = {
-      productos: [
-        { id: 1, nombre: 'Guirnalda de Luces LED 10M', categoria: 'Navidad',       costo: 4723, precio: 12000, stock: 10 },
-        { id: 2, nombre: 'Gorro Decorativo Navideño',  categoria: 'Navidad',       costo: 6006, precio: 15000, stock: 8 },
-        { id: 3, nombre: 'Grasa de Cerdo (Tarro)',      categoria: 'Origen Lumbre', costo: 8000, precio: 18000, stock: 20 }
-      ],
-      movimientos: [],
-      gastosCaja: []
-    };
+    const CRED_DEFECTO = { user: 'origenlumbre', pass: 'navidad2026', pin: '1234' };
+    const METODOS = ['Efectivo', 'Nequi', 'Bancolombia', 'Daviplata'];
+
+    const PRODUCTOS_INICIALES = [
+      { id: 1, nombre: 'Guirnalda de Luces LED 10M', categoria: 'Navidad',       costo: 4723, precio: 12000, stock: 10 },
+      { id: 2, nombre: 'Gorro Decorativo Navideño',  categoria: 'Navidad',       costo: 6006, precio: 15000, stock: 8 },
+      { id: 3, nombre: 'Grasa de Cerdo (Tarro)',      categoria: 'Origen Lumbre', costo: 8000, precio: 18000, stock: 20 }
+    ];
 
     // ---------------------------------------------------------
     // 2. ESTADO
     // ---------------------------------------------------------
-    let credenciales = leerLocal(CLAVE_CREDENCIALES) || { ...CREDENCIALES_POR_DEFECTO };
-    let datos = normalizarDatos(leerLocal(CLAVE_DATOS) || DATOS_INICIALES);
+    let estado = leerLocal(CLAVE_CACHE) || { productos: {}, movimientos: {}, gastosCaja: {} };
+    let config = null;           // credenciales compartidas (en la nube)
+    let configCargada = false;
+    let enLinea = false;
+    let carrito = [];
+    let catVentaActual = 'Navidad';
     let lumbreDesbloqueado = false;
     let ultimaVentaRegistrada = null;
     let miGrafico = null;
+    let ventaEnCurso = false;
 
     // ---------------------------------------------------------
     // 3. UTILIDADES
@@ -486,20 +564,10 @@
     function leerLocal(clave) {
       try { return JSON.parse(localStorage.getItem(clave)); } catch { return null; }
     }
-
-    // Firebase borra los arreglos vacíos; esto los repone sin tocar lo que ya existe
-    function normalizarDatos(d) {
-      d = d || {};
-      const aLista = v => Array.isArray(v) ? v : (v ? Object.values(v) : []);
-      return {
-        ...d,
-        productos:   aLista(d.productos),
-        movimientos: aLista(d.movimientos),
-        gastosCaja:  aLista(d.gastosCaja)
-      };
+    function guardarLocal(clave, valor) {
+      try { localStorage.setItem(clave, JSON.stringify(valor)); } catch {}
     }
 
-    // Fecha local de Colombia (antes usaba UTC y de noche guardaba el día siguiente)
     function fechaHoy() {
       const d = new Date();
       const pad = n => String(n).padStart(2, '0');
@@ -510,7 +578,6 @@
       return '$' + Math.round(Number(n) || 0).toLocaleString('es-CO');
     }
 
-    // Evita que un nombre con símbolos raros rompa la tabla
     function esc(txt) {
       return String(txt ?? '').replace(/[&<>"']/g, c => ({ '&': '&amp;', '<': '&lt;', '>': '&gt;', '"': '&quot;', "'": '&#39;' }[c]));
     }
@@ -524,59 +591,127 @@
       if (el) { el.textContent = texto; el.className = `text-[9px] font-bold ml-1 ${clase}`; }
     }
 
+    // Convierte arreglo u objeto de Firebase en lista
+    const aLista = v => Array.isArray(v) ? v.filter(Boolean) : (v ? Object.values(v) : []);
+
+    // Lista con su llave de Firebase (_key) para poder editar/borrar cada registro
+    const conLlave = obj => Object.entries(obj || {}).map(([k, v]) => ({ ...v, _key: k }));
+    const productos   = () => conLlave(estado.productos);
+    const movimientos = () => conLlave(estado.movimientos);
+    const gastos      = () => conLlave(estado.gastosCaja);
+
+    // Llave segura para Firebase a partir de un id viejo
+    const llaveDe = (prefijo, id) => `${prefijo}_${String(id).replace(/[.#$\[\]\/]/g, '_')}`;
+
+    // Quita valores undefined (Firebase no los acepta)
+    const limpiar = obj => JSON.parse(JSON.stringify(obj));
+
+    // Los gastos viejos decían "Efectivo/Caja"
+    const normalizarMetodo = m => (!m || String(m).startsWith('Efectivo')) ? 'Efectivo' : m;
+
+    const suma = (lista, fn) => lista.reduce((acc, x) => acc + (Number(fn(x)) || 0), 0);
+
+    function conTiempo(promesa, ms) {
+      return Promise.race([promesa, new Promise((_, rej) => setTimeout(() => rej(new Error('tiempo')), ms))]);
+    }
+
+    // Las contraseñas se guardan "cifradas" en la nube, nunca en texto plano
+    async function hash(texto) {
+      const t = 'mateylau::' + texto;
+      if (window.crypto && crypto.subtle) {
+        const buf = await crypto.subtle.digest('SHA-256', new TextEncoder().encode(t));
+        return [...new Uint8Array(buf)].map(b => b.toString(16).padStart(2, '0')).join('');
+      }
+      let h = 2166136261;
+      for (const c of t) { h ^= c.charCodeAt(0); h = Math.imul(h, 16777619); }
+      return 'f' + (h >>> 0).toString(16);
+    }
+
     // ---------------------------------------------------------
     // 4. NUBE (FIREBASE)
     // ---------------------------------------------------------
     if (!firebase.apps.length) firebase.initializeApp(firebaseConfig);
-    const dbRef = firebase.database().ref('datos');
+    const db = firebase.database();
+    const refRaiz   = db.ref(RAIZ);
+    const refConfig = db.ref(RAIZ + '/config/credenciales');
 
-    dbRef.on('value', (snapshot) => {
-      const val = snapshot.val();
-      if (val) {
-        // Hay datos en la nube: se usan esos
-        datos = normalizarDatos(val);
-        localStorage.setItem(CLAVE_DATOS, JSON.stringify(datos));
-      } else {
-        // La nube está vacía: se sube lo que haya localmente
-        dbRef.set(datos);
-      }
-      ponerEstadoSync('(Sincronizado 👌)', 'text-emerald-400');
-      actualizarPantallaCompleta();
-    }, () => {
-      ponerEstadoSync('(Modo Local)', 'text-slate-400');
+    db.ref('.info/connected').on('value', s => {
+      enLinea = !!s.val();
+      ponerEstadoSync(enLinea ? '(En línea 👌)' : '(Sin conexión)', enLinea ? 'text-emerald-400' : 'text-rose-300');
     });
 
-    function guardarYActualizar() {
-      localStorage.setItem(CLAVE_DATOS, JSON.stringify(datos));
-      actualizarPantallaCompleta();
-      ponerEstadoSync('(Guardando...)', 'text-amber-300');
-      dbRef.set(datos)
-        .then(() => ponerEstadoSync('(Sincronizado 👌)', 'text-emerald-400'))
-        .catch(() => ponerEstadoSync('(Sin conexión, guardado local)', 'text-rose-300'));
+    refConfig.on('value', s => { config = s.val(); configCargada = true; });
+
+    // Pasa los datos de la versión anterior a la nueva estructura (una sola vez)
+    async function migrarSiHaceFalta() {
+      const meta = await refRaiz.child('meta/migrado').once('value');
+      if (meta.exists()) return;
+
+      const viejo = (await db.ref(RAIZ_VIEJA).once('value')).val();
+      const upd = {};
+
+      if (viejo) {
+        aLista(viejo.productos).forEach(p => { upd[`productos/${llaveDe('p', p.id)}`] = limpiar(p); });
+        aLista(viejo.movimientos).forEach(m => { upd[`movimientos/${llaveDe('m', m.id)}`] = limpiar(m); });
+        aLista(viejo.gastosCaja).forEach(g => { upd[`gastosCaja/${llaveDe('g', g.id)}`] = limpiar(g); });
+      } else {
+        PRODUCTOS_INICIALES.forEach(p => { upd[`productos/${llaveDe('p', p.id)}`] = p; });
+      }
+      upd['meta/migrado'] = new Date().toISOString();
+      upd['meta/version'] = 5;
+      await refRaiz.update(upd);
+    }
+
+    conTiempo(migrarSiHaceFalta(), 10000)
+      .catch(err => console.warn('Migración pendiente:', err.message))
+      .finally(() => {
+        refRaiz.on('value', snap => {
+          const v = snap.val() || {};
+          estado = {
+            productos:   v.productos   || {},
+            movimientos: v.movimientos || {},
+            gastosCaja:  v.gastosCaja  || {}
+          };
+          guardarLocal(CLAVE_CACHE, estado);
+          actualizarPantallaCompleta();
+        });
+      });
+
+    // Cambia el stock de UN producto de forma segura, aunque dos personas vendan a la vez
+    function cambiarStock(prodKey, delta) {
+      return refRaiz.child(`productos/${prodKey}/stock`).transaction(actual => {
+        if (actual === null || actual === undefined) return; // producto no existe: cancela
+        const nuevo = (Number(actual) || 0) + delta;
+        if (nuevo < 0) return;                               // no alcanza: cancela
+        return nuevo;
+      });
     }
 
     function sincronizarConNubeManualmente() {
       ponerEstadoSync('(Sincronizando...)', 'text-amber-300');
-      dbRef.once('value').then((snapshot) => {
-        const val = snapshot.val();
-        if (val) {
-          datos = normalizarDatos(val);
-          localStorage.setItem(CLAVE_DATOS, JSON.stringify(datos));
-          actualizarPantallaCompleta();
-        }
-        ponerEstadoSync('(Sincronizado 👌)', 'text-emerald-400');
-      }).catch(() => ponerEstadoSync('(Modo Local)', 'text-slate-400'));
+      conTiempo(refRaiz.once('value'), 8000).then(() => {
+        ponerEstadoSync('(En línea 👌)', 'text-emerald-400');
+        actualizarPantallaCompleta();
+      }).catch(() => ponerEstadoSync('(Sin conexión)', 'text-rose-300'));
     }
 
     function actualizarPantallaCompleta() {
+      // Si borraron un producto que estaba en el carrito, se quita
+      carrito = carrito.filter(i => estado.productos[i.prodKey]);
       renderizarDashboard();
       renderizarInventario();
       renderizarHistorial();
       actualizarBuscadorVenta();
+      renderizarCarrito();
+    }
+
+    function avisarError(err) {
+      console.error(err);
+      alert('No se pudo guardar. Revisa tu conexión a internet e inténtalo de nuevo.');
     }
 
     // ---------------------------------------------------------
-    // 5. SESIÓN
+    // 5. SESIÓN Y CREDENCIALES COMPARTIDAS
     // ---------------------------------------------------------
     if ('serviceWorker' in navigator) {
       navigator.serviceWorker.register('sw.js').catch(() => {});
@@ -586,23 +721,65 @@
       if (localStorage.getItem(CLAVE_SESION) === 'true') mostrarApp();
     });
 
-    function validarLogin(e) {
+    async function obtenerConfig() {
+      if (configCargada) return config;
+      try {
+        const s = await conTiempo(refConfig.once('value'), 6000);
+        config = s.val();
+        configCargada = true;
+      } catch { /* sin conexión: se usan las de este celular */ }
+      return config;
+    }
+
+    const credLocales = () => leerLocal(CLAVE_CRED_LOCAL) || CRED_DEFECTO;
+
+    async function subirCredenciales(user, pass, pin) {
+      const nuevo = {
+        user,
+        passHash: await hash(pass),
+        pinHash:  await hash(pin),
+        actualizado: new Date().toISOString()
+      };
+      await refConfig.set(nuevo);
+      config = nuevo;
+      localStorage.removeItem(CLAVE_CRED_LOCAL); // ya no se guarda en texto plano
+    }
+
+    async function validarLogin(e) {
       e.preventDefault();
+      const btn  = $('btnLogin');
       const user = $('loginUser').value.trim();
       const pass = $('loginPass').value;
-      if (user === credenciales.user && pass === credenciales.pass) {
-        localStorage.setItem(CLAVE_SESION, 'true');
-        $('loginError').classList.add('hidden');
-        mostrarApp();
-      } else {
-        $('loginError').classList.remove('hidden');
+      btn.disabled = true; btn.textContent = 'Verificando...';
+
+      try {
+        const cfg = await obtenerConfig();
+        let ok;
+        if (cfg && cfg.user) {
+          ok = user === cfg.user && (await hash(pass)) === cfg.passHash;
+        } else {
+          const loc = credLocales();
+          ok = user === loc.user && pass === loc.pass;
+          // Primera vez con esta versión: se suben para que sirvan en todos los celulares
+          if (ok && configCargada) await subirCredenciales(loc.user, loc.pass, loc.pin);
+        }
+
+        if (ok) {
+          localStorage.setItem(CLAVE_SESION, 'true');
+          $('loginError').classList.add('hidden');
+          mostrarApp();
+        } else {
+          $('loginError').classList.remove('hidden');
+        }
+      } finally {
+        btn.disabled = false; btn.textContent = 'Ingresar';
       }
     }
 
     function mostrarApp() {
       $('loginSection').classList.add('hidden');
       $('appSection').classList.remove('hidden');
-      $('cfgUsuario').value = credenciales.user;
+      $('cfgUsuario').value = (config && config.user) || credLocales().user;
       actualizarPantallaCompleta();
     }
 
@@ -613,6 +790,35 @@
       $('loginPass').value = '';
       $('appSection').classList.add('hidden');
       $('loginSection').classList.remove('hidden');
+    }
+
+    async function guardarNuevasCredenciales(e) {
+      e.preventDefault();
+      const actual = $('cfgActual').value;
+      const cfg = await obtenerConfig();
+
+      let ok;
+      if (cfg && cfg.user) {
+        const h = await hash(actual);
+        ok = h === cfg.passHash || h === cfg.pinHash;
+      } else {
+        const loc = credLocales();
+        ok = actual === loc.pass || actual === loc.pin;
+      }
+      if (!ok) { alert('Contraseña o PIN actual incorrecto'); return; }
+
+      const user = $('cfgUsuario').value.trim();
+      const pass = $('cfgPassword').value;
+      const pin  = $('cfgPin').value;
+      if (!/^\d{4}$/.test(pin)) { alert('El PIN debe tener exactamente 4 números'); return; }
+      if (!configCargada || !enLinea) { alert('Necesitas internet para cambiar las credenciales.'); return; }
+
+      try {
+        await subirCredenciales(user, pass, pin);
+        e.target.reset();
+        $('cfgUsuario').value = user;
+        alert(`Credenciales actualizadas en todos los celulares ✅\n\nUsuario: ${user}\n¡Anótalas para no olvidarlas!`);
+      } catch (err) { avisarError(err); }
     }
 
     function cambiarPestana(pestana) {
@@ -627,19 +833,24 @@
     // ---------------------------------------------------------
     // 6. PIN (Origen Lumbre)
     // ---------------------------------------------------------
+    async function pinValido(pin) {
+      const cfg = await obtenerConfig();
+      if (cfg && cfg.pinHash) return (await hash(pin)) === cfg.pinHash;
+      return pin === credLocales().pin;
+    }
+
     function cambiarFiltroDashboard() {
       if ($('dashFiltro').value === 'Origen Lumbre' && !lumbreDesbloqueado) {
         $('inputPinVal').value = '';
         $('pinValError').classList.add('hidden');
         abrirModal('modalPin');
         setTimeout(() => $('inputPinVal').focus(), 50);
-      } else {
-        renderizarDashboard();
       }
+      renderizarDashboard();
     }
 
-    function verificarPinModal() {
-      if ($('inputPinVal').value === credenciales.pin) {
+    async function verificarPinModal() {
+      if (await pinValido($('inputPinVal').value)) {
         lumbreDesbloqueado = true;
         cerrarModal('modalPin');
         renderizarDashboard();
@@ -655,86 +866,191 @@
     }
 
     // ---------------------------------------------------------
-    // 7. VENTAS
+    // 7. VENTAS CON CARRITO
     // ---------------------------------------------------------
+    // Unidades que quedan libres (stock menos lo que ya está en el carrito)
+    function disponible(prodKey) {
+      const p = estado.productos[prodKey];
+      if (!p) return 0;
+      const enCarrito = suma(carrito.filter(i => i.prodKey === prodKey), i => i.cantidad);
+      return (Number(p.stock) || 0) - enCarrito;
+    }
+
+    function cambiarCategoriaVenta() {
+      const nueva = $('ventaCat').value;
+      if (carrito.length && nueva !== catVentaActual) {
+        if (!confirm('El carrito tiene productos de otra categoría. ¿Vaciarlo para cambiar?')) {
+          $('ventaCat').value = catVentaActual;
+          return;
+        }
+        carrito = [];
+        renderizarCarrito();
+      }
+      catVentaActual = nueva;
+      actualizarBuscadorVenta();
+    }
+
     function actualizarBuscadorVenta() {
       const cat = $('ventaCat').value;
       const texto = ($('ventaBusqueda').value || '').toLowerCase();
       const select = $('ventaProdId');
-      const seleccionPrevia = select.value;
+      const previo = select.value;
 
-      const opciones = datos.productos
+      const opciones = productos()
         .filter(p => p.categoria === cat && String(p.nombre).toLowerCase().includes(texto))
-        .map(p => `<option value="${p.id}">${esc(p.nombre)} (Stock: ${p.stock}) - ${dinero(p.precio)}</option>`)
-        .join('');
+        .sort((a, b) => String(a.nombre).localeCompare(String(b.nombre)))
+        .map(p => {
+          const disp = disponible(p._key);
+          return `<option value="${p._key}" ${disp <= 0 ? 'disabled' : ''}>${esc(p.nombre)} (Disp: ${disp}) - ${dinero(p.precio)}</option>`;
+        }).join('');
 
       select.innerHTML = '<option value="">-- Seleccionar producto --</option>' + opciones;
-      if ([...select.options].some(o => o.value === seleccionPrevia)) select.value = seleccionPrevia;
+      if ([...select.options].some(o => o.value === previo && !o.disabled)) select.value = previo;
       actualizarPrecioVenta();
     }
 
     function actualizarPrecioVenta() {
-      const producto = datos.productos.find(p => String(p.id) === $('ventaProdId').value);
-      $('ventaPrecio').value = producto ? producto.precio : '';
+      const p = estado.productos[$('ventaProdId').value];
+      $('ventaPrecio').value = p ? p.precio : '';
     }
 
-    function guardarVenta(e) {
-      e.preventDefault();
-      const cat        = $('ventaCat').value;
-      const prodId     = $('ventaProdId').value;
-      const precio     = parseFloat($('ventaPrecio').value);
-      const cantidad   = parseInt($('ventaCantidad').value, 10);
-      const metodoPago = $('ventaMetodoPago').value;
-      const cliente    = $('ventaCliente').value.trim() || 'Cliente General';
+    function agregarAlCarrito() {
+      const prodKey  = $('ventaProdId').value;
+      const p        = estado.productos[prodKey];
+      const cantidad = parseInt($('ventaCantidad').value, 10);
+      const precio   = parseFloat($('ventaPrecio').value);
 
-      const producto = datos.productos.find(p => String(p.id) === prodId);
-      if (!producto) { alert('Selecciona un producto'); return; }
-      if (producto.stock < cantidad) { alert(`Stock insuficiente. Solo quedan ${producto.stock}.`); return; }
+      if (!p) { alert('Selecciona un producto'); return; }
+      if (!(cantidad > 0)) { alert('La cantidad debe ser mayor a 0'); return; }
+      if (!(precio >= 0)) { alert('Revisa el precio'); return; }
 
-      producto.stock -= cantidad;
+      const disp = disponible(prodKey);
+      if (cantidad > disp) { alert(`Solo hay ${disp} unidad(es) disponibles de "${p.nombre}"`); return; }
 
-      const movimiento = {
-        id: Date.now(),
-        fecha: fechaHoy(),
-        tipo: 'Venta',
-        metodoPago,
-        categoria: cat,
-        cliente,
-        descripcion: `${producto.nombre} (x${cantidad}) [${metodoPago}] - Cliente: ${cliente}`,
-        monto: precio * cantidad,
-        costoTotal: producto.costo * cantidad
-      };
+      const existente = carrito.find(i => i.prodKey === prodKey && i.precio === precio);
+      if (existente) {
+        existente.cantidad += cantidad;
+      } else {
+        carrito.push({ prodKey, nombre: p.nombre, precio, costo: Number(p.costo) || 0, cantidad });
+      }
 
-      datos.movimientos.push(movimiento);
-      ultimaVentaRegistrada = movimiento;
-      $('contenedorBotonPostal').classList.toggle('hidden', cat !== 'Navidad');
-
-      guardarYActualizar();
-
-      // Limpia el formulario pero conserva la categoría elegida
-      e.target.reset();
-      $('ventaCat').value = cat;
+      $('ventaCantidad').value = 1;
+      $('ventaBusqueda').value = '';
+      $('ventaProdId').value = '';
+      renderizarCarrito();
       actualizarBuscadorVenta();
-      alert('¡Venta registrada con éxito!');
+    }
+
+    function quitarDelCarrito(indice) {
+      carrito.splice(indice, 1);
+      renderizarCarrito();
+      actualizarBuscadorVenta();
+    }
+
+    function renderizarCarrito() {
+      const total = suma(carrito, i => i.precio * i.cantidad);
+      const unidades = suma(carrito, i => i.cantidad);
+
+      $('listaCarrito').innerHTML = carrito.map((i, idx) => `
+        <div class="flex justify-between items-center py-2 gap-2">
+          <div class="min-w-0">
+            <div class="font-semibold text-slate-800 truncate">${esc(i.nombre)}</div>
+            <div class="text-slate-500">${i.cantidad} × ${dinero(i.precio)}</div>
+          </div>
+          <div class="flex items-center gap-3 shrink-0">
+            <span class="font-bold text-slate-800">${dinero(i.precio * i.cantidad)}</span>
+            <button onclick="quitarDelCarrito(${idx})" class="text-rose-500" title="Quitar"><i class="fa-solid fa-xmark"></i></button>
+          </div>
+        </div>`).join('') || '<p class="text-slate-400 text-center py-3">El carrito está vacío</p>';
+
+      $('carritoTotal').textContent = dinero(total);
+      $('carritoConteo').textContent = `${unidades} ${unidades === 1 ? 'unidad' : 'unidades'}`;
+      if (!ventaEnCurso) $('btnCompletarVenta').disabled = carrito.length === 0;
+    }
+
+    async function completarVenta() {
+      if (ventaEnCurso || !carrito.length) return;
+      if (!enLinea) { alert('Necesitas internet para registrar la venta (así se evita vender algo que ya se agotó en el otro celular).'); return; }
+
+      const btn = $('btnCompletarVenta');
+      ventaEnCurso = true;
+      btn.disabled = true;
+      btn.textContent = 'Guardando...';
+
+      const aplicados = [];
+      try {
+        // 1) Descontar stock producto por producto, de forma segura
+        for (const it of carrito) {
+          const r = await cambiarStock(it.prodKey, -it.cantidad);
+          if (!r.committed) {
+            for (const a of aplicados) await cambiarStock(a.prodKey, a.cantidad); // deshacer
+            alert(`No hay suficiente stock de "${it.nombre}". Puede que se haya vendido desde el otro celular.`);
+            return;
+          }
+          aplicados.push(it);
+        }
+
+        // 2) Guardar la venta como un registro independiente
+        const metodoPago = $('ventaMetodoPago').value;
+        const cliente    = $('ventaCliente').value.trim() || 'Cliente General';
+        const categoria  = catVentaActual;
+        const items = carrito.map(i => ({ ...i }));
+
+        const mov = {
+          id: Date.now(),
+          fecha: fechaHoy(),
+          tipo: 'Venta',
+          metodoPago,
+          categoria,
+          cliente,
+          items,
+          descripcion: `${items.map(i => `${i.nombre} (x${i.cantidad})`).join(', ')} [${metodoPago}] - Cliente: ${cliente}`,
+          monto: suma(items, i => i.precio * i.cantidad),
+          costoTotal: suma(items, i => i.costo * i.cantidad)
+        };
+
+        await refRaiz.child('movimientos').push(mov);
+        ultimaVentaRegistrada = mov;
+
+        carrito = [];
+        $('ventaCliente').value = '';
+        $('contenedorBotonPostal').classList.toggle('hidden', categoria !== 'Navidad');
+        alert(`¡Venta registrada! Total: ${dinero(mov.monto)}`);
+      } catch (err) {
+        for (const a of aplicados) { try { await cambiarStock(a.prodKey, a.cantidad); } catch {} }
+        avisarError(err);
+      } finally {
+        ventaEnCurso = false;
+        btn.textContent = 'Completar Venta';
+        renderizarCarrito();
+        actualizarBuscadorVenta();
+      }
     }
 
     // ---------------------------------------------------------
     // 8. GASTOS DE CAJA
     // ---------------------------------------------------------
-    function guardarGastoCaja(e) {
+    async function guardarGastoCaja(e) {
       e.preventDefault();
-      datos.gastosCaja.push({
+      const gasto = {
         id: Date.now(),
         fecha: fechaHoy(),
         tipo: 'Gasto Caja',
-        metodoPago: 'Efectivo/Caja',
+        metodoPago: $('gastoMetodo').value,
         categoria: $('gastoCat').value,
         descripcion: $('gastoConcepto').value.trim(),
         monto: parseFloat($('gastoMonto').value)
-      });
-      guardarYActualizar();
-      e.target.reset();
-      alert('Gasto registrado con éxito');
+      };
+      const form = e.target;
+      try {
+        await conTiempo(refRaiz.child('gastosCaja').push(gasto), 10000);
+        form.reset();
+        alert('Gasto registrado con éxito');
+      } catch (err) {
+        // Firebase lo guarda apenas vuelva internet
+        form.reset();
+        alert('Gasto guardado en este celular. Se subirá apenas haya internet.');
+      }
     }
 
     // ---------------------------------------------------------
@@ -744,8 +1060,9 @@
       const buscar = $('invBuscar').value.toLowerCase();
       const filtroCat = $('invFiltroCat').value;
 
-      $('tablaInventario').innerHTML = datos.productos
+      $('tablaInventario').innerHTML = productos()
         .filter(p => String(p.nombre).toLowerCase().includes(buscar) && (filtroCat === 'Todos' || p.categoria === filtroCat))
+        .sort((a, b) => String(a.nombre).localeCompare(String(b.nombre)))
         .map(p => `
           <tr class="hover:bg-slate-50">
             <td class="p-3 font-medium text-slate-800">${esc(p.nombre)}</td>
@@ -753,9 +1070,9 @@
             <td class="p-3">${dinero(p.costo)}</td>
             <td class="p-3 font-bold text-emerald-600">${dinero(p.precio)}</td>
             <td class="p-3 font-bold ${p.stock <= 3 ? 'text-rose-600' : 'text-slate-700'}">${p.stock}</td>
-            <td class="p-3 text-right space-x-2">
-              <button onclick="editarProducto('${p.id}')" class="text-blue-600" title="Editar"><i class="fa-solid fa-pen"></i></button>
-              <button onclick="eliminarProducto('${p.id}')" class="text-rose-600" title="Eliminar"><i class="fa-solid fa-trash"></i></button>
+            <td class="p-3 text-right space-x-2 whitespace-nowrap">
+              <button onclick="editarProducto('${p._key}')" class="text-blue-600" title="Editar"><i class="fa-solid fa-pen"></i></button>
+              <button onclick="eliminarProducto('${p._key}')" class="text-rose-600" title="Eliminar"><i class="fa-solid fa-trash"></i></button>
             </td>
           </tr>`)
         .join('') || '<tr><td colspan="6" class="p-4 text-center text-slate-400">Sin productos</td></tr>';
@@ -763,15 +1080,15 @@
 
     function prepararModalProducto() {
       $('modalProductoTitulo').textContent = 'Nuevo Producto';
-      ['prodEditId', 'prodNombre', 'prodCosto', 'prodPrecio', 'prodStock'].forEach(id => $(id).value = '');
+      ['prodEditKey', 'prodNombre', 'prodCosto', 'prodPrecio', 'prodStock'].forEach(id => $(id).value = '');
       abrirModal('modalProducto');
     }
 
-    function editarProducto(id) {
-      const p = datos.productos.find(item => String(item.id) === String(id));
+    function editarProducto(key) {
+      const p = estado.productos[key];
       if (!p) return;
       $('modalProductoTitulo').textContent = 'Editar Producto';
-      $('prodEditId').value    = p.id;
+      $('prodEditKey').value   = key;
       $('prodNombre').value    = p.nombre;
       $('prodCategoria').value = p.categoria;
       $('prodCosto').value     = p.costo;
@@ -782,7 +1099,7 @@
 
     function guardarProductoModal(e) {
       e.preventDefault();
-      const id = $('prodEditId').value;
+      const key = $('prodEditKey').value;
       const campos = {
         nombre:    $('prodNombre').value.trim(),
         categoria: $('prodCategoria').value,
@@ -791,57 +1108,56 @@
         stock:     parseInt($('prodStock').value, 10)
       };
 
-      if (id) {
-        const p = datos.productos.find(item => String(item.id) === id);
-        if (p) Object.assign(p, campos);
-      } else {
-        datos.productos.push({ id: Date.now(), ...campos });
-      }
-      guardarYActualizar();
+      const promesa = key
+        ? refRaiz.child('productos/' + key).update(campos)
+        : refRaiz.child('productos').push({ id: Date.now(), ...campos });
+
+      promesa.catch(avisarError);
       cerrarModal('modalProducto');
     }
 
-    function eliminarProducto(id) {
-      const p = datos.productos.find(item => String(item.id) === String(id));
+    function eliminarProducto(key) {
+      const p = estado.productos[key];
       if (!p) return;
       if (confirm(`⚠️ ¿Estás seguro de eliminar "${p.nombre}"?\nEsta acción no se puede deshacer.`)) {
-        datos.productos = datos.productos.filter(item => String(item.id) !== String(id));
-        guardarYActualizar();
+        refRaiz.child('productos/' + key).remove().catch(avisarError);
       }
     }
 
     function procesarPlanoMasivo() {
       const lineas = $('txtPlano').value.split('\n');
       const base = Date.now();
-      let cargados = 0;
+      const upd = {};
 
       lineas.forEach((l, i) => {
         const partes = l.split(',').map(s => s.trim());
         if (partes.length >= 5 && partes[0]) {
-          datos.productos.push({
+          const key = refRaiz.child('productos').push().key;
+          upd[key] = {
             id: base + i,
             nombre: partes[0],
             categoria: partes[1],
             costo: parseFloat(partes[2]) || 0,
             precio: parseFloat(partes[3]) || 0,
             stock: parseInt(partes[4], 10) || 0
-          });
-          cargados++;
+          };
         }
       });
 
-      guardarYActualizar();
+      const cantidad = Object.keys(upd).length;
+      if (!cantidad) { alert('No se encontró ninguna línea válida'); return; }
+
+      refRaiz.child('productos').update(upd).catch(avisarError);
       cerrarModal('modalPlano');
       $('txtPlano').value = '';
-      alert(`Carga masiva realizada: ${cargados} producto(s)`);
+      alert(`Carga masiva realizada: ${cantidad} producto(s)`);
     }
 
     function exportarExcel() {
-      let csv = 'ID,Nombre,Categoria,Costo,Precio,Stock\n';
-      datos.productos.forEach(p => {
-        csv += `${p.id},"${String(p.nombre).replace(/"/g, '""')}","${p.categoria}",${p.costo},${p.precio},${p.stock}\n`;
+      let csv = 'Nombre,Categoria,Costo,Precio,Stock\n';
+      productos().forEach(p => {
+        csv += `"${String(p.nombre).replace(/"/g, '""')}","${p.categoria}",${p.costo},${p.precio},${p.stock}\n`;
       });
-      // El \uFEFF hace que Excel muestre bien las tildes y la ñ
       const blob = new Blob(['\uFEFF' + csv], { type: 'text/csv;charset=utf-8;' });
       const link = document.createElement('a');
       link.href = URL.createObjectURL(blob);
@@ -859,25 +1175,25 @@
       const filtroHasta = $('histFiltroHasta').value;
 
       const ops = [
-        ...datos.movimientos.map(m => ({ ...m, tipoOp: 'Venta' })),
-        ...datos.gastosCaja.map(g => ({ ...g, tipoOp: 'Gasto' }))
+        ...movimientos().map(m => ({ ...m, tipoOp: 'Venta' })),
+        ...gastos().map(g => ({ ...g, tipoOp: 'Gasto' }))
       ]
         .filter(o => filtroCat === 'Todos' || o.categoria === filtroCat)
         .filter(o => !filtroDesde || o.fecha >= filtroDesde)
         .filter(o => !filtroHasta || o.fecha <= filtroHasta)
-        .sort((a, b) => b.id - a.id);
+        .sort((a, b) => (b.id || 0) - (a.id || 0));
 
       $('tablaHistorial').innerHTML = ops.map(op => {
         const esVenta = op.tipoOp === 'Venta';
-        const badge = op.metodoPago ? `<span class="text-[10px] bg-slate-100 text-slate-600 px-1.5 py-0.5 rounded font-semibold ml-1">${esc(op.metodoPago)}</span>` : '';
+        const badge = `<span class="text-[10px] bg-slate-100 text-slate-600 px-1.5 py-0.5 rounded font-semibold ml-1">${esc(normalizarMetodo(op.metodoPago))}</span>`;
         return `
           <tr class="hover:bg-slate-50">
             <td class="p-3 text-slate-500 whitespace-nowrap">${op.fecha}</td>
-            <td class="p-3"><span class="px-2 py-0.5 rounded text-[10px] font-bold ${esVenta ? 'bg-emerald-100 text-emerald-700' : 'bg-rose-100 text-rose-700'}">${esc(op.tipo)}</span> ${badge}</td>
+            <td class="p-3 whitespace-nowrap"><span class="px-2 py-0.5 rounded text-[10px] font-bold ${esVenta ? 'bg-emerald-100 text-emerald-700' : 'bg-rose-100 text-rose-700'}">${esc(op.tipo)}</span> ${badge}</td>
             <td class="p-3 text-slate-500">${esc(op.categoria)}</td>
             <td class="p-3 text-slate-800">${esc(op.descripcion)}</td>
             <td class="p-3 text-right font-bold ${esVenta ? 'text-emerald-600' : 'text-rose-600'}">${dinero(op.monto)}</td>
-            <td class="p-3 text-right"><button onclick="eliminarOperacion(${op.id}, '${op.tipoOp}')" class="text-rose-500" title="Eliminar"><i class="fa-solid fa-trash"></i></button></td>
+            <td class="p-3 text-right"><button onclick="eliminarOperacion('${op._key}', '${op.tipoOp}')" class="text-rose-500" title="Eliminar"><i class="fa-solid fa-trash"></i></button></td>
           </tr>`;
       }).join('') || '<tr><td colspan="6" class="p-4 text-center text-slate-400">Sin operaciones</td></tr>';
     }
@@ -889,47 +1205,74 @@
       renderizarHistorial();
     }
 
-    function eliminarOperacion(id, tipoOp) {
-      if (!confirm('⚠️ ¿Deseas eliminar esta operación del historial?')) return;
-      if (tipoOp === 'Venta') {
-        datos.movimientos = datos.movimientos.filter(m => m.id !== id);
-      } else {
-        datos.gastosCaja = datos.gastosCaja.filter(g => g.id !== id);
-      }
-      guardarYActualizar();
+    // Saca los productos de una venta. Para ventas de la versión anterior
+    // los adivina a partir del texto "Nombre (x2) [Método] - Cliente: ..."
+    function itemsDeVenta(m) {
+      const items = aLista(m.items);
+      if (items.length) return items;
+
+      const coincide = String(m.descripcion || '').match(/^(.*) \(x(\d+)\) \[/);
+      if (!coincide) return [];
+      const [, nombre, cant] = coincide;
+      const p = productos().find(x => x.nombre === nombre && x.categoria === m.categoria);
+      return p ? [{ prodKey: p._key, nombre, cantidad: parseInt(cant, 10) }] : [];
+    }
+
+    async function eliminarOperacion(key, tipoOp) {
+      try {
+        if (tipoOp === 'Venta') {
+          const m = estado.movimientos[key];
+          if (!m) return;
+          const items = itemsDeVenta(m).filter(i => estado.productos[i.prodKey]);
+
+          const msg = items.length
+            ? `⚠️ ¿Eliminar esta venta?\n\nSe devolverán al inventario:\n${items.map(i => `• ${i.nombre} x${i.cantidad}`).join('\n')}`
+            : '⚠️ ¿Eliminar esta venta?\n\nNo se encontraron los productos en el inventario, así que el stock NO se devolverá. Ajústalo a mano si hace falta.';
+          if (!confirm(msg)) return;
+
+          for (const it of items) await cambiarStock(it.prodKey, Number(it.cantidad) || 0);
+          await refRaiz.child('movimientos/' + key).remove();
+        } else {
+          if (!confirm('⚠️ ¿Deseas eliminar este gasto del historial?')) return;
+          await refRaiz.child('gastosCaja/' + key).remove();
+        }
+      } catch (err) { avisarError(err); }
     }
 
     // ---------------------------------------------------------
-    // 11. DASHBOARD
+    // 11. DASHBOARD Y CUADRE DE CAJA
     // ---------------------------------------------------------
+    const ID_TARJETAS = ['dashVentasFiltradas', 'dashVentasMes', 'dashVentasCosto', 'dashGananciaBruta',
+                         'dashTotalInvertido', 'dashTotalGastosCaja', 'dashUtilidadLimpia'];
+
     function renderizarDashboard() {
       const filtroCat    = $('dashFiltro').value;
       const filtroMetodo = $('dashFiltroMetodo').value;
       const desde        = $('dashFiltroDesde').value;
       const hasta        = $('dashFiltroHasta').value;
 
-      // Si eligen Origen Lumbre sin PIN, no se muestran cifras
-      if (filtroCat === 'Origen Lumbre' && !lumbreDesbloqueado) return;
+      if (filtroCat === 'Origen Lumbre' && !lumbreDesbloqueado) {
+        ID_TARJETAS.forEach(id => $(id).textContent = '🔒');
+        $('cuadreRango').textContent = '';
+        $('tablaCuadre').innerHTML = '<tr><td colspan="4" class="p-4 text-center text-slate-400">🔒 Ingresa el PIN para ver Origen Lumbre</td></tr>';
+        if (miGrafico) { miGrafico.destroy(); miGrafico = null; }
+        return;
+      }
 
-      const enRango = x => (!desde || x.fecha >= desde) && (!hasta || x.fecha <= hasta);
+      const enRango   = x => (!desde || x.fecha >= desde) && (!hasta || x.fecha <= hasta);
+      const deMetodo  = x => filtroMetodo === 'Todos' || normalizarMetodo(x.metodoPago) === filtroMetodo;
 
-      const movs = datos.movimientos.filter(m =>
-        m.categoria === filtroCat &&
-        (filtroMetodo === 'Todos' || m.metodoPago === filtroMetodo) &&
-        enRango(m));
+      const movs = movimientos().filter(m => m.categoria === filtroCat && deMetodo(m) && enRango(m));
+      const gas  = gastos().filter(g => g.categoria === filtroCat && deMetodo(g) && enRango(g));
 
-      const gastos = datos.gastosCaja.filter(g => g.categoria === filtroCat && enRango(g));
-
-      const suma = (lista, fn) => lista.reduce((acc, x) => acc + (Number(fn(x)) || 0), 0);
-      const mesActual = fechaHoy().substring(0, 7);
-
+      const mesActual   = fechaHoy().substring(0, 7);
       const ventas      = suma(movs, m => m.monto);
-      const ventasMes   = suma(movs.filter(m => m.fecha.startsWith(mesActual)), m => m.monto);
+      const ventasMes   = suma(movs.filter(m => String(m.fecha).startsWith(mesActual)), m => m.monto);
       const costoVentas = suma(movs, m => m.costoTotal);
       const ganancia    = ventas - costoVentas;
-      const totalGastos = suma(gastos, g => g.monto);
+      const totalGastos = suma(gas, g => g.monto);
       const utilidad    = ganancia - totalGastos;
-      const inventario  = suma(datos.productos.filter(p => p.categoria === filtroCat), p => p.costo * p.stock);
+      const inventario  = suma(productos().filter(p => p.categoria === filtroCat), p => p.costo * p.stock);
 
       $('dashVentasFiltradas').textContent = dinero(ventas);
       $('dashVentasMes').textContent       = dinero(ventasMes);
@@ -940,7 +1283,56 @@
       $('dashUtilidadLimpia').textContent  = dinero(utilidad);
       $('dashUtilidadLimpia').className    = `text-2xl font-bold mt-1 ${utilidad < 0 ? 'text-rose-600' : 'text-emerald-600'}`;
 
+      renderizarCuadre(filtroCat, enRango, desde, hasta);
       renderizarGrafico([ventas, costoVentas, totalGastos, utilidad]);
+    }
+
+    // Cuánta plata debe haber en cada medio de pago
+    function renderizarCuadre(cat, enRango, desde, hasta) {
+      const movs = movimientos().filter(m => m.categoria === cat && enRango(m));
+      const gas  = gastos().filter(g => g.categoria === cat && enRango(g));
+
+      const filas = METODOS.map(metodo => {
+        const entro = suma(movs.filter(m => normalizarMetodo(m.metodoPago) === metodo), m => m.monto);
+        const salio = suma(gas.filter(g => normalizarMetodo(g.metodoPago) === metodo), g => g.monto);
+        return { metodo, entro, salio, neto: entro - salio };
+      });
+
+      const total = {
+        entro: suma(filas, f => f.entro),
+        salio: suma(filas, f => f.salio),
+        neto:  suma(filas, f => f.neto)
+      };
+
+      const iconos = { Efectivo: '💵', Nequi: '🟣', Bancolombia: '🟡', Daviplata: '🔴' };
+      const colorNeto = n => n < 0 ? 'text-rose-600' : 'text-slate-800';
+
+      $('tablaCuadre').innerHTML = filas.map(f => `
+        <tr>
+          <td class="p-2.5 font-semibold">${iconos[f.metodo]} ${f.metodo}</td>
+          <td class="p-2.5 text-right text-emerald-600">${dinero(f.entro)}</td>
+          <td class="p-2.5 text-right text-rose-600">${f.salio ? '-' + dinero(f.salio) : dinero(0)}</td>
+          <td class="p-2.5 text-right font-bold ${colorNeto(f.neto)}">${dinero(f.neto)}</td>
+        </tr>`).join('') + `
+        <tr class="bg-slate-50 font-bold">
+          <td class="p-2.5">TOTAL</td>
+          <td class="p-2.5 text-right text-emerald-700">${dinero(total.entro)}</td>
+          <td class="p-2.5 text-right text-rose-700">${total.salio ? '-' + dinero(total.salio) : dinero(0)}</td>
+          <td class="p-2.5 text-right ${colorNeto(total.neto)}">${dinero(total.neto)}</td>
+        </tr>`;
+
+      let rango;
+      if (desde && hasta && desde === hasta) rango = desde === fechaHoy() ? 'Hoy' : `El ${desde}`;
+      else if (desde || hasta) rango = `Del ${desde || 'inicio'} al ${hasta || 'hoy'}`;
+      else rango = 'Todo el historial';
+      $('cuadreRango').textContent = `${rango} · ${cat}. Toca "Hoy" para hacer el cierre del día.`;
+    }
+
+    function verHoy() {
+      const hoy = fechaHoy();
+      $('dashFiltroDesde').value = hoy;
+      $('dashFiltroHasta').value = hoy;
+      renderizarDashboard();
     }
 
     function limpiarFiltrosDashboard() {
@@ -969,37 +1361,11 @@
     }
 
     // ---------------------------------------------------------
-    // 12. AJUSTES (credenciales)
-    // ---------------------------------------------------------
-    function guardarNuevasCredenciales(e) {
-      e.preventDefault();
-      const actual = $('cfgActual').value;
-      if (actual !== credenciales.pass && actual !== credenciales.pin) {
-        alert('Contraseña o PIN actual incorrecto');
-        return;
-      }
-      const nuevoPin = $('cfgPin').value;
-      if (!/^\d{4}$/.test(nuevoPin)) { alert('El PIN debe tener exactamente 4 números'); return; }
-
-      credenciales = {
-        user: $('cfgUsuario').value.trim(),
-        pass: $('cfgPassword').value,
-        pin:  nuevoPin
-      };
-      localStorage.setItem(CLAVE_CREDENCIALES, JSON.stringify(credenciales));
-      e.target.reset();
-      $('cfgUsuario').value = credenciales.user;
-      alert(`Credenciales actualizadas ✅\n\nUsuario: ${credenciales.user}\n¡Anótalas para no olvidarlas!`);
-    }
-
-    // ---------------------------------------------------------
-    // 13. POSTAL NAVIDEÑA
+    // 12. POSTAL NAVIDEÑA
     // ---------------------------------------------------------
     function abrirModalPostal() {
       if (ultimaVentaRegistrada) {
-        const cliente = ultimaVentaRegistrada.cliente
-          || ultimaVentaRegistrada.descripcion.split(' - Cliente: ')[1]
-          || '';
+        const cliente = ultimaVentaRegistrada.cliente || '';
         $('postalSaludo').textContent = (cliente && cliente !== 'Cliente General') ? `Hola, ${cliente}:` : 'Hola:';
         $('postalFecha').textContent = ultimaVentaRegistrada.fecha;
       }
@@ -1024,7 +1390,7 @@
         const { jsPDF } = window.jspdf;
         const pdf = new jsPDF('p', 'mm', 'a4');
         const ancho = 120;
-        const alto = ancho * canvas.height / canvas.width; // conserva proporción
+        const alto = ancho * canvas.height / canvas.width;
         pdf.addImage(canvas.toDataURL('image/png'), 'PNG', (210 - ancho) / 2, 15, ancho, alto);
         pdf.save('postal_navidena_mate_y_lau.pdf');
       });
