@@ -505,30 +505,65 @@
       </section>
 
       <!-- ===================== AJUSTES ===================== -->
-      <section id="sec-config" class="hidden max-w-lg mx-auto space-y-6">
-        <div class="bg-white p-6 rounded-xl shadow-sm border border-slate-200 space-y-4">
-          <h2 class="text-base font-bold text-slate-800 flex items-center gap-2"><i class="fa-solid fa-key text-amber-600"></i> Cambiar Usuario, Contraseña y PIN</h2>
-          <p class="text-[11px] text-slate-500">Los cambios aplican en <b>todos los celulares</b> al mismo tiempo.</p>
-          <form onsubmit="guardarNuevasCredenciales(event)" class="space-y-3">
+      <section id="sec-config" class="hidden max-w-lg mx-auto space-y-4">
+        <p class="text-[11px] text-slate-500 px-1">Cada cambio aplica en <b>todos los celulares</b> al mismo tiempo. 💡 Anota tus datos nuevos antes de guardar.</p>
+
+        <!-- Cambiar contraseña -->
+        <div class="bg-white p-6 rounded-xl shadow-sm border border-slate-200 space-y-3">
+          <h2 class="text-base font-bold text-slate-800 flex items-center gap-2"><i class="fa-solid fa-lock text-amber-600"></i> Cambiar contraseña</h2>
+          <form onsubmit="cambiarContrasena(event)" class="space-y-3">
             <div>
-              <label class="block text-xs font-semibold text-slate-600 mb-1">Contraseña o PIN Actual (Obligatorio)</label>
-              <input type="password" id="cfgActual" class="w-full p-2.5 border rounded-lg text-xs" required placeholder="Clave actual">
-            </div>
-            <hr class="my-2">
-            <div>
-              <label class="block text-xs font-semibold text-slate-600 mb-1">Nuevo Usuario Principal</label>
-              <input type="text" id="cfgUsuario" autocapitalize="off" class="w-full p-2.5 border rounded-lg text-xs" required>
+              <label class="block text-xs font-semibold text-slate-600 mb-1">Contraseña actual</label>
+              <input type="password" id="cfgPassActual" autocomplete="current-password" class="w-full p-2.5 border rounded-lg text-sm" required>
             </div>
             <div>
-              <label class="block text-xs font-semibold text-slate-600 mb-1">Nueva Contraseña Principal</label>
-              <input type="password" id="cfgPassword" class="w-full p-2.5 border rounded-lg text-xs" required>
+              <label class="block text-xs font-semibold text-slate-600 mb-1">Nueva contraseña</label>
+              <input type="password" id="cfgPassNueva" autocomplete="new-password" minlength="4" class="w-full p-2.5 border rounded-lg text-sm" required>
             </div>
             <div>
-              <label class="block text-xs font-semibold text-slate-600 mb-1">Nuevo PIN de 4 dígitos</label>
-              <input type="password" id="cfgPin" maxlength="4" inputmode="numeric" class="w-full p-2.5 border rounded-lg text-xs text-center font-bold tracking-widest" required>
+              <label class="block text-xs font-semibold text-slate-600 mb-1">Repite la nueva contraseña</label>
+              <input type="password" id="cfgPassNueva2" autocomplete="new-password" class="w-full p-2.5 border rounded-lg text-sm" required>
             </div>
-            <p class="text-[11px] text-slate-500">💡 Anota tus nuevos datos en un lugar seguro antes de guardar.</p>
-            <button type="submit" class="w-full bg-amber-500 hover:bg-amber-600 text-slate-900 font-bold py-2.5 rounded-lg text-xs transition">Guardar Cambios</button>
+            <button type="submit" class="w-full bg-amber-500 hover:bg-amber-600 text-slate-900 font-bold py-2.5 rounded-lg text-xs transition">Cambiar contraseña</button>
+          </form>
+        </div>
+
+        <!-- Cambiar PIN -->
+        <div class="bg-white p-6 rounded-xl shadow-sm border border-slate-200 space-y-3">
+          <h2 class="text-base font-bold text-slate-800 flex items-center gap-2"><i class="fa-solid fa-hashtag text-amber-600"></i> Cambiar PIN (Origen Lumbre)</h2>
+          <form onsubmit="cambiarPin(event)" class="space-y-3">
+            <div>
+              <label class="block text-xs font-semibold text-slate-600 mb-1">PIN actual</label>
+              <input type="password" id="cfgPinActual" maxlength="4" inputmode="numeric" class="w-full p-2.5 border rounded-lg text-sm text-center font-bold tracking-widest" required>
+            </div>
+            <div class="grid grid-cols-2 gap-3">
+              <div>
+                <label class="block text-xs font-semibold text-slate-600 mb-1">Nuevo PIN</label>
+                <input type="password" id="cfgPinNuevo" maxlength="4" inputmode="numeric" class="w-full p-2.5 border rounded-lg text-sm text-center font-bold tracking-widest" required>
+              </div>
+              <div>
+                <label class="block text-xs font-semibold text-slate-600 mb-1">Repite el PIN</label>
+                <input type="password" id="cfgPinNuevo2" maxlength="4" inputmode="numeric" class="w-full p-2.5 border rounded-lg text-sm text-center font-bold tracking-widest" required>
+              </div>
+            </div>
+            <button type="submit" class="w-full bg-amber-500 hover:bg-amber-600 text-slate-900 font-bold py-2.5 rounded-lg text-xs transition">Cambiar PIN</button>
+          </form>
+        </div>
+
+        <!-- Cambiar usuario -->
+        <div class="bg-white p-6 rounded-xl shadow-sm border border-slate-200 space-y-3">
+          <h2 class="text-base font-bold text-slate-800 flex items-center gap-2"><i class="fa-solid fa-user text-amber-600"></i> Cambiar usuario</h2>
+          <p class="text-[11px] text-slate-500">Usuario actual: <b id="cfgUsuarioActual"></b></p>
+          <form onsubmit="cambiarUsuario(event)" class="space-y-3">
+            <div>
+              <label class="block text-xs font-semibold text-slate-600 mb-1">Nuevo usuario</label>
+              <input type="text" id="cfgUsuario" autocapitalize="off" class="w-full p-2.5 border rounded-lg text-sm" required>
+            </div>
+            <div>
+              <label class="block text-xs font-semibold text-slate-600 mb-1">Contraseña actual (para confirmar)</label>
+              <input type="password" id="cfgUsuarioPass" autocomplete="current-password" class="w-full p-2.5 border rounded-lg text-sm" required>
+            </div>
+            <button type="submit" class="w-full bg-amber-500 hover:bg-amber-600 text-slate-900 font-bold py-2.5 rounded-lg text-xs transition">Cambiar usuario</button>
           </form>
         </div>
       </section>
@@ -976,7 +1011,7 @@
     function mostrarApp() {
       $('loginSection').classList.add('hidden');
       $('appSection').classList.remove('hidden');
-      $('cfgUsuario').value = (config && config.user) || credLocales().user;
+      $('cfgUsuarioActual').textContent = (config && config.user) || credLocales().user;
       actualizarPantallaCompleta();
     }
 
@@ -989,33 +1024,96 @@
       $('loginSection').classList.remove('hidden');
     }
 
-    async function guardarNuevasCredenciales(e) {
-      e.preventDefault();
-      const actual = $('cfgActual').value;
+    // ---- Credenciales actuales (de la nube o, si aún no se han subido, las de este celular) ----
+    async function credencialesActuales() {
       const cfg = await obtenerConfig();
+      if (cfg && cfg.user) return { nube: true, cfg };
+      return { nube: false, loc: credLocales() };
+    }
 
-      let ok;
-      if (cfg && cfg.user) {
-        const h = await hash(actual);
-        ok = h === cfg.passHash || h === cfg.pinHash;
+    async function esContrasenaActual(pass) {
+      const c = await credencialesActuales();
+      return c.nube ? (await hash(pass)) === c.cfg.passHash : pass === c.loc.pass;
+    }
+
+    async function esPinActual(pin) {
+      const c = await credencialesActuales();
+      return c.nube ? (await hash(pin)) === c.cfg.pinHash : pin === c.loc.pin;
+    }
+
+    // Guarda SOLO lo que cambió; lo demás queda igual
+    async function guardarCambioCredencial(cambios) {
+      if (!configCargada || !enLinea) throw new Error('sin-internet');
+      const c = await credencialesActuales();
+      if (c.nube) {
+        const upd = { actualizado: new Date().toISOString() };
+        if (cambios.user) upd.user = cambios.user;
+        if (cambios.pass) upd.passHash = await hash(cambios.pass);
+        if (cambios.pin)  upd.pinHash  = await hash(cambios.pin);
+        await refConfig.update(upd);
+        config = { ...c.cfg, ...upd };
       } else {
-        const loc = credLocales();
-        ok = actual === loc.pass || actual === loc.pin;
+        // Primera vez: se suben todas, cambiando solo la que se pidió
+        await subirCredenciales(cambios.user || c.loc.user, cambios.pass || c.loc.pass, cambios.pin || c.loc.pin);
       }
-      if (!ok) { alert('Contraseña o PIN actual incorrecto'); return; }
+    }
 
-      const user = $('cfgUsuario').value.trim();
-      const pass = $('cfgPassword').value;
-      const pin  = $('cfgPin').value;
-      if (!/^\d{4}$/.test(pin)) { alert('El PIN debe tener exactamente 4 números'); return; }
-      if (!configCargada || !enLinea) { alert('Necesitas internet para cambiar las credenciales.'); return; }
+    function avisarCredencial(err) {
+      if (err && err.message === 'sin-internet') alert('Necesitas internet para hacer este cambio.');
+      else avisarError(err);
+    }
+
+    async function cambiarContrasena(e) {
+      e.preventDefault();
+      const actual = $('cfgPassActual').value;
+      const nueva  = $('cfgPassNueva').value;
+      const nueva2 = $('cfgPassNueva2').value;
+
+      if (!(await esContrasenaActual(actual))) { alert('La contraseña actual no es correcta.'); return; }
+      if (nueva.length < 4) { alert('La nueva contraseña debe tener al menos 4 caracteres.'); return; }
+      if (nueva !== nueva2) { alert('Las dos contraseñas nuevas no coinciden.'); return; }
+      if (nueva === actual) { alert('La nueva contraseña es igual a la actual.'); return; }
 
       try {
-        await subirCredenciales(user, pass, pin);
+        await guardarCambioCredencial({ pass: nueva });
         e.target.reset();
-        $('cfgUsuario').value = user;
-        alert(`Credenciales actualizadas en todos los celulares ✅\n\nUsuario: ${user}\n¡Anótalas para no olvidarlas!`);
-      } catch (err) { avisarError(err); }
+        alert('Contraseña cambiada en todos los celulares ✅\n\nEl usuario y el PIN siguen iguales.');
+      } catch (err) { avisarCredencial(err); }
+    }
+
+    async function cambiarPin(e) {
+      e.preventDefault();
+      const actual = $('cfgPinActual').value;
+      const nuevo  = $('cfgPinNuevo').value;
+      const nuevo2 = $('cfgPinNuevo2').value;
+
+      if (!(await esPinActual(actual))) { alert('El PIN actual no es correcto.'); return; }
+      if (!/^\d{4}$/.test(nuevo)) { alert('El PIN nuevo debe tener exactamente 4 números.'); return; }
+      if (nuevo !== nuevo2) { alert('Los dos PIN nuevos no coinciden.'); return; }
+      if (nuevo === actual) { alert('El PIN nuevo es igual al actual.'); return; }
+
+      try {
+        await guardarCambioCredencial({ pin: nuevo });
+        e.target.reset();
+        lumbreDesbloqueado = false; // que lo pida de nuevo con el PIN nuevo
+        alert('PIN cambiado en todos los celulares ✅\n\nLa contraseña y el usuario siguen iguales.');
+      } catch (err) { avisarCredencial(err); }
+    }
+
+    async function cambiarUsuario(e) {
+      e.preventDefault();
+      const nuevo = $('cfgUsuario').value.trim();
+      const pass  = $('cfgUsuarioPass').value;
+
+      if (!nuevo) { alert('Escribe el nuevo usuario.'); return; }
+      if (!(await esContrasenaActual(pass))) { alert('La contraseña actual no es correcta.'); return; }
+
+      try {
+        await guardarCambioCredencial({ user: nuevo });
+        e.target.reset();
+        $('cfgUsuarioActual').textContent = nuevo;
+        alert(`Usuario cambiado a "${nuevo}" ✅\n\nLa contraseña y el PIN siguen iguales.`);
+      } catch (err) { avisarCredencial(err); }
     }
 
     function cambiarPestana(pestana) {
