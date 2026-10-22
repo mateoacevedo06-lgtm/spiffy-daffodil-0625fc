@@ -22,6 +22,7 @@
   <script src="https://cdnjs.cloudflare.com/ajax/libs/html2canvas/1.4.1/html2canvas.min.js"></script>
   <script src="https://cdnjs.cloudflare.com/ajax/libs/jspdf/2.5.1/jspdf.umd.min.js"></script>
   <script src="https://www.gstatic.com/firebasejs/9.23.0/firebase-app-compat.js"></script>
+  <script src="https://www.gstatic.com/firebasejs/9.23.0/firebase-auth-compat.js"></script>
   <script src="https://www.gstatic.com/firebasejs/9.23.0/firebase-database-compat.js"></script>
 
   <!-- ===================== ESTILOS ===================== -->
@@ -77,17 +78,19 @@
         <h2 class="text-2xl font-bold text-slate-800">Control Financiero</h2>
         <p class="text-xs text-slate-500 mt-1">Mate y Lau</p>
       </div>
-      <form onsubmit="validarLogin(event)" class="space-y-4 text-left">
+      <p id="loginCargando" class="text-sm text-slate-500">Cargando...</p>
+      <form id="loginForm" onsubmit="validarLogin(event)" class="hidden space-y-4 text-left">
         <div>
-          <label class="block text-xs font-semibold text-slate-600 mb-1">Usuario</label>
-          <input type="text" id="loginUser" autocomplete="username" autocapitalize="off" class="w-full p-3 border rounded-lg text-sm outline-none focus:ring-2 focus:ring-emerald-500" required>
+          <label class="block text-xs font-semibold text-slate-600 mb-1">Correo</label>
+          <input type="email" id="loginUser" autocomplete="username" autocapitalize="off" inputmode="email" class="w-full p-3 border rounded-lg text-sm outline-none focus:ring-2 focus:ring-emerald-500" required>
         </div>
         <div>
           <label class="block text-xs font-semibold text-slate-600 mb-1">Contraseña</label>
           <input type="password" id="loginPass" autocomplete="current-password" class="w-full p-3 border rounded-lg text-sm outline-none focus:ring-2 focus:ring-emerald-500" required>
         </div>
-        <p id="loginError" class="text-xs text-rose-500 font-semibold hidden text-center">Credenciales incorrectas</p>
+        <p id="loginError" class="text-xs text-rose-500 font-semibold hidden text-center">Correo o contraseña incorrectos</p>
         <button type="submit" id="btnLogin" class="w-full bg-slate-900 hover:bg-slate-800 text-white font-bold py-3 rounded-lg shadow-lg transition">Ingresar</button>
+        <button type="button" onclick="olvideContrasena()" class="w-full text-xs text-slate-500 hover:text-slate-800 font-semibold">¿Olvidaste la contraseña?</button>
       </form>
     </div>
   </div>
@@ -506,7 +509,7 @@
 
       <!-- ===================== AJUSTES ===================== -->
       <section id="sec-config" class="hidden max-w-lg mx-auto space-y-4">
-        <p class="text-[11px] text-slate-500 px-1">Cada cambio aplica en <b>todos los celulares</b> al mismo tiempo. 💡 Anota tus datos nuevos antes de guardar.</p>
+        <p class="text-[11px] text-slate-500 px-1">Cada cambio aplica en <b>todos los celulares</b>. 💡 Anota tus datos nuevos antes de guardar.</p>
 
         <!-- Cambiar contraseña -->
         <div class="bg-white p-6 rounded-xl shadow-sm border border-slate-200 space-y-3">
@@ -550,21 +553,11 @@
           </form>
         </div>
 
-        <!-- Cambiar usuario -->
-        <div class="bg-white p-6 rounded-xl shadow-sm border border-slate-200 space-y-3">
-          <h2 class="text-base font-bold text-slate-800 flex items-center gap-2"><i class="fa-solid fa-user text-amber-600"></i> Cambiar usuario</h2>
-          <p class="text-[11px] text-slate-500">Usuario actual: <b id="cfgUsuarioActual"></b></p>
-          <form onsubmit="cambiarUsuario(event)" class="space-y-3">
-            <div>
-              <label class="block text-xs font-semibold text-slate-600 mb-1">Nuevo usuario</label>
-              <input type="text" id="cfgUsuario" autocapitalize="off" class="w-full p-2.5 border rounded-lg text-sm" required>
-            </div>
-            <div>
-              <label class="block text-xs font-semibold text-slate-600 mb-1">Contraseña actual (para confirmar)</label>
-              <input type="password" id="cfgUsuarioPass" autocomplete="current-password" class="w-full p-2.5 border rounded-lg text-sm" required>
-            </div>
-            <button type="submit" class="w-full bg-amber-500 hover:bg-amber-600 text-slate-900 font-bold py-2.5 rounded-lg text-xs transition">Cambiar usuario</button>
-          </form>
+        <!-- Cuenta -->
+        <div class="bg-white p-6 rounded-xl shadow-sm border border-slate-200 space-y-2">
+          <h2 class="text-base font-bold text-slate-800 flex items-center gap-2"><i class="fa-solid fa-user text-amber-600"></i> Cuenta</h2>
+          <p class="text-sm text-slate-600">Entran con: <b id="cfgUsuarioActual"></b></p>
+          <p class="text-[11px] text-slate-500">Los dos usan esta misma cuenta. Si olvidan la contraseña, en la pantalla de ingreso toquen "¿Olvidaste la contraseña?" y llega un enlace a este correo.</p>
         </div>
       </section>
     </main>
@@ -742,8 +735,16 @@
     // ---------------------------------------------------------
     // 1. CONFIGURACIÓN
     // ---------------------------------------------------------
+    // Configuración del proyecto en Firebase (estos datos son públicos por diseño;
+    // la seguridad la dan el inicio de sesión y las reglas de la base de datos)
     const firebaseConfig = {
-      databaseURL: "https://control-mate-y-lau-84d9c-default-rtdb.firebaseio.com"
+      apiKey: "AIzaSyBdkri4Qbnl09hsyBXbh-vwC9CFi0QUvBw",
+      authDomain: "control-mate-y-lau-84d9c.firebaseapp.com",
+      databaseURL: "https://control-mate-y-lau-84d9c-default-rtdb.firebaseio.com",
+      projectId: "control-mate-y-lau-84d9c",
+      storageBucket: "control-mate-y-lau-84d9c.firebasestorage.app",
+      messagingSenderId: "989361862930",
+      appId: "1:989361862930:web:bf676428f8397274455bcb"
     };
 
     // Los datos nuevos viven en "datos_v5". La rama vieja "datos" NO se toca:
@@ -862,6 +863,7 @@
     // 4. NUBE (FIREBASE)
     // ---------------------------------------------------------
     if (!firebase.apps.length) firebase.initializeApp(firebaseConfig);
+    const auth = firebase.auth();
     const db = firebase.database();
     const refRaiz   = db.ref(RAIZ);
     const refConfig = db.ref(RAIZ + '/config/credenciales');
@@ -871,7 +873,6 @@
       ponerEstadoSync(enLinea ? '(En línea 👌)' : '(Sin conexión)', enLinea ? 'text-emerald-400' : 'text-rose-300');
     });
 
-    refConfig.on('value', s => { config = s.val(); configCargada = true; });
 
     // Pasa los datos de la versión anterior a la nueva estructura (una sola vez)
     async function migrarSiHaceFalta() {
@@ -893,21 +894,35 @@
       await refRaiz.update(upd);
     }
 
-    conTiempo(migrarSiHaceFalta(), 10000)
-      .catch(err => console.warn('Migración pendiente:', err.message))
-      .finally(() => {
-        refRaiz.on('value', snap => {
-          const v = snap.val() || {};
-          estado = {
-            productos:   v.productos   || {},
-            movimientos: v.movimientos || {},
-            gastosCaja:  v.gastosCaja  || {},
-            cuentas:     v.cuentas     || {}
-          };
-          guardarLocal(CLAVE_CACHE, estado);
-          actualizarPantallaCompleta();
+    // Se conecta a los datos SOLO cuando hay una sesión iniciada
+    let datosIniciados = false;
+    function iniciarDatos() {
+      if (datosIniciados) return;
+      datosIniciados = true;
+      refConfig.on('value', s => { config = s.val(); configCargada = true; mostrarCuenta(); });
+      conTiempo(migrarSiHaceFalta(), 10000)
+        .catch(err => console.warn('Migración pendiente:', err.message))
+        .finally(() => {
+          refRaiz.on('value', snap => {
+            const v = snap.val() || {};
+            estado = {
+              productos:   v.productos   || {},
+              movimientos: v.movimientos || {},
+              gastosCaja:  v.gastosCaja  || {},
+              cuentas:     v.cuentas     || {}
+            };
+            guardarLocal(CLAVE_CACHE, estado);
+            actualizarPantallaCompleta();
+          }, err => console.warn('Sin permiso para leer:', err && err.message));
         });
-      });
+    }
+
+    function detenerDatos() {
+      try { refRaiz.off(); refConfig.off(); } catch (e) { console.warn(e); }
+      datosIniciados = false;
+      config = null;
+      configCargada = false;
+    }
 
     // Cambia el stock de UN producto de forma segura, aunque dos personas vendan a la vez
     function cambiarStock(prodKey, delta) {
@@ -949,9 +964,40 @@
       navigator.serviceWorker.register('sw.js?v=5').catch(() => {});
     }
 
-    window.addEventListener('load', () => {
-      if (localStorage.getItem(CLAVE_SESION) === 'true') mostrarApp();
+    // La sesión la recuerda Firebase en cada celular: no hay que entrar cada vez
+    let estadoAuthConocido = false;
+    auth.onAuthStateChanged(usuario => {
+      estadoAuthConocido = true;
+      $('loginCargando').classList.add('hidden');
+      if (usuario) {
+        mostrarApp();
+        iniciarDatos();
+      } else {
+        mostrarLogin();
+        detenerDatos();
+      }
     });
+    // Si sin internet tarda en responder, muestra el formulario de todos modos
+    setTimeout(() => { if (!estadoAuthConocido) { $('loginCargando').classList.add('hidden'); $('loginForm').classList.remove('hidden'); } }, 5000);
+
+    function mostrarLogin() {
+      $('appSection').classList.add('hidden');
+      $('loginSection').classList.remove('hidden');
+      $('loginForm').classList.remove('hidden');
+    }
+
+    function mostrarCuenta() {
+      const u = auth.currentUser;
+      if ($('cfgUsuarioActual')) $('cfgUsuarioActual').textContent = u ? u.email : '';
+    }
+
+    function mensajeErrorAuth(err) {
+      const c = (err && err.code) || '';
+      if (c.includes('network')) return 'No hay conexión a internet. Inténtalo de nuevo.';
+      if (c.includes('too-many-requests')) return 'Demasiados intentos. Espera unos minutos e inténtalo otra vez.';
+      if (c.includes('invalid-email')) return 'Ese correo no es válido.';
+      return 'Correo o contraseña incorrectos';
+    }
 
     async function obtenerConfig() {
       if (configCargada) return config;
@@ -979,49 +1025,45 @@
 
     async function validarLogin(e) {
       e.preventDefault();
-      const btn  = $('btnLogin');
-      const user = $('loginUser').value.trim();
-      const pass = $('loginPass').value;
+      const btn   = $('btnLogin');
+      const email = $('loginUser').value.trim();
+      const pass  = $('loginPass').value;
       btn.disabled = true; btn.textContent = 'Verificando...';
-
+      $('loginError').classList.add('hidden');
       try {
-        const cfg = await obtenerConfig();
-        let ok;
-        if (cfg && cfg.user) {
-          ok = user === cfg.user && (await hash(pass)) === cfg.passHash;
-        } else {
-          const loc = credLocales();
-          ok = user === loc.user && pass === loc.pass;
-          // Primera vez con esta versión: se suben para que sirvan en todos los celulares
-          if (ok && configCargada) await subirCredenciales(loc.user, loc.pass, loc.pin);
-        }
-
-        if (ok) {
-          localStorage.setItem(CLAVE_SESION, 'true');
-          $('loginError').classList.add('hidden');
-          mostrarApp();
-        } else {
-          $('loginError').classList.remove('hidden');
-        }
+        await auth.signInWithEmailAndPassword(email, pass);
+        $('loginPass').value = '';
+        // onAuthStateChanged se encarga de abrir la app
+      } catch (err) {
+        $('loginError').textContent = mensajeErrorAuth(err);
+        $('loginError').classList.remove('hidden');
       } finally {
         btn.disabled = false; btn.textContent = 'Ingresar';
       }
     }
 
+    async function olvideContrasena() {
+      const email = $('loginUser').value.trim();
+      if (!email) { alert('Escribe primero el correo en la casilla de arriba.'); $('loginUser').focus(); return; }
+      try {
+        await auth.sendPasswordResetEmail(email);
+        alert(`Listo ✅\n\nSi ${email} es el correo de la cuenta, te llegó un enlace para crear una contraseña nueva. Revisa también la carpeta de spam.`);
+      } catch (err) { alert(mensajeErrorAuth(err)); }
+    }
+
     function mostrarApp() {
       $('loginSection').classList.add('hidden');
       $('appSection').classList.remove('hidden');
-      $('cfgUsuarioActual').textContent = (config && config.user) || credLocales().user;
+      mostrarCuenta();
       actualizarPantallaCompleta();
     }
 
-    function cerrarSesion() {
-      localStorage.removeItem(CLAVE_SESION);
+    async function cerrarSesion() {
       lumbreDesbloqueado = false;
       $('dashFiltro').value = 'Navidad';
       $('loginPass').value = '';
-      $('appSection').classList.add('hidden');
-      $('loginSection').classList.remove('hidden');
+      try { localStorage.removeItem(CLAVE_CACHE); } catch {}
+      await auth.signOut(); // onAuthStateChanged muestra la pantalla de ingreso
     }
 
     // ---- Credenciales actuales (de la nube o, si aún no se han subido, las de este celular) ----
@@ -1068,17 +1110,28 @@
       const actual = $('cfgPassActual').value;
       const nueva  = $('cfgPassNueva').value;
       const nueva2 = $('cfgPassNueva2').value;
+      const u = auth.currentUser;
+      if (!u) { alert('Vuelve a iniciar sesión.'); return; }
 
-      if (!(await esContrasenaActual(actual))) { alert('La contraseña actual no es correcta.'); return; }
-      if (nueva.length < 4) { alert('La nueva contraseña debe tener al menos 4 caracteres.'); return; }
+      if (nueva.length < 6) { alert('La nueva contraseña debe tener al menos 6 caracteres.'); return; }
       if (nueva !== nueva2) { alert('Las dos contraseñas nuevas no coinciden.'); return; }
       if (nueva === actual) { alert('La nueva contraseña es igual a la actual.'); return; }
 
       try {
-        await guardarCambioCredencial({ pass: nueva });
+        // Confirma la contraseña anterior antes de cambiarla
+        await u.reauthenticateWithCredential(firebase.auth.EmailAuthProvider.credential(u.email, actual));
+      } catch (err) {
+        const c = (err && err.code) || '';
+        alert(c.includes('network') ? 'Necesitas internet para hacer este cambio.' :
+              c.includes('too-many-requests') ? 'Demasiados intentos. Espera unos minutos.' :
+              'La contraseña actual no es correcta.');
+        return;
+      }
+      try {
+        await u.updatePassword(nueva);
         e.target.reset();
-        alert('Contraseña cambiada en todos los celulares ✅\n\nEl usuario y el PIN siguen iguales.');
-      } catch (err) { avisarCredencial(err); }
+        alert('Contraseña cambiada ✅\n\nÚsala en los dos celulares la próxima vez que entren. El PIN sigue igual.');
+      } catch (err) { alert(mensajeErrorAuth(err)); }
     }
 
     async function cambiarPin(e) {
@@ -1096,23 +1149,7 @@
         await guardarCambioCredencial({ pin: nuevo });
         e.target.reset();
         lumbreDesbloqueado = false; // que lo pida de nuevo con el PIN nuevo
-        alert('PIN cambiado en todos los celulares ✅\n\nLa contraseña y el usuario siguen iguales.');
-      } catch (err) { avisarCredencial(err); }
-    }
-
-    async function cambiarUsuario(e) {
-      e.preventDefault();
-      const nuevo = $('cfgUsuario').value.trim();
-      const pass  = $('cfgUsuarioPass').value;
-
-      if (!nuevo) { alert('Escribe el nuevo usuario.'); return; }
-      if (!(await esContrasenaActual(pass))) { alert('La contraseña actual no es correcta.'); return; }
-
-      try {
-        await guardarCambioCredencial({ user: nuevo });
-        e.target.reset();
-        $('cfgUsuarioActual').textContent = nuevo;
-        alert(`Usuario cambiado a "${nuevo}" ✅\n\nLa contraseña y el PIN siguen iguales.`);
+        alert('PIN cambiado en todos los celulares ✅\n\nLa contraseña sigue igual.');
       } catch (err) { avisarCredencial(err); }
     }
 
