@@ -511,6 +511,17 @@
       <section id="sec-config" class="hidden max-w-lg mx-auto space-y-4">
         <p class="text-[11px] text-slate-500 px-1">Cada cambio aplica en <b>todos los celulares</b>. 💡 Anota tus datos nuevos antes de guardar.</p>
 
+        <!-- Medios de pago -->
+        <div class="bg-white p-6 rounded-xl shadow-sm border border-slate-200 space-y-3">
+          <h2 class="text-base font-bold text-slate-800 flex items-center gap-2"><i class="fa-solid fa-wallet text-emerald-600"></i> Medios de pago</h2>
+          <p class="text-[11px] text-slate-500">Salen en ventas, gastos, abonos y en el cuadre de caja.</p>
+          <ul id="listaMetodos" class="space-y-2 text-sm"></ul>
+          <form onsubmit="agregarMetodo(event)" class="flex gap-2">
+            <input type="text" id="nuevoMetodo" maxlength="30" placeholder="Ej. Tarjeta de crédito" class="flex-1 p-2.5 border rounded-lg text-sm" required>
+            <button type="submit" class="bg-emerald-600 hover:bg-emerald-700 text-white font-bold px-4 rounded-lg text-xs">Agregar</button>
+          </form>
+        </div>
+
         <!-- Cambiar contraseña -->
         <div class="bg-white p-6 rounded-xl shadow-sm border border-slate-200 space-y-3">
           <h2 class="text-base font-bold text-slate-800 flex items-center gap-2"><i class="fa-solid fa-lock text-amber-600"></i> Cambiar contraseña</h2>
@@ -756,7 +767,11 @@
     const CLAVE_SESION     = 'CF_SESION_ACTIVA';
 
     const CRED_DEFECTO = { user: 'origenlumbre', pass: 'navidad2026', pin: '1234' };
-    const METODOS = ['Efectivo', 'Nequi', 'Bancolombia', 'Daviplata'];
+    const METODOS_BASE = ['Efectivo', 'Nequi', 'Bancolombia', 'Daviplata'];
+    let METODOS = (leerLocalSeguro('CF_METODOS_V1') || METODOS_BASE).slice();
+    function leerLocalSeguro(c) { try { const v = JSON.parse(localStorage.getItem(c)); return Array.isArray(v) && v.length ? v : null; } catch { return null; } }
+    const ICONOS_METODO = { Efectivo: '💵', Nequi: '🟣', Bancolombia: '🟡', Daviplata: '🔴' };
+    const iconoMetodo = m => ICONOS_METODO[m] || '💳';
 
     const PRODUCTOS_INICIALES = [
       { id: 1, nombre: 'Guirnalda de Luces LED 10M', categoria: 'Navidad',       costo: 4723, precio: 12000, stock: 10 },
@@ -867,6 +882,7 @@
     const db = firebase.database();
     const refRaiz   = db.ref(RAIZ);
     const refConfig = db.ref(RAIZ + '/config/credenciales');
+    const refMetodos = db.ref(RAIZ + '/config/metodos');
 
     db.ref('.info/connected').on('value', s => {
       enLinea = !!s.val();
@@ -900,6 +916,14 @@
       if (datosIniciados) return;
       datosIniciados = true;
       refConfig.on('value', s => { config = s.val(); configCargada = true; mostrarCuenta(); });
+      refMetodos.on('value', s => {
+        const v = s.val();
+        const lista = Array.isArray(v) ? v.filter(Boolean) : (v ? Object.values(v).filter(Boolean) : []);
+        METODOS = lista.length ? lista : METODOS_BASE.slice();
+        guardarLocal('CF_METODOS_V1', METODOS);
+        pintarMetodos();
+        try { renderizarDashboard(); } catch (e) {}
+      });
       conTiempo(migrarSiHaceFalta(), 10000)
         .catch(err => console.warn('Migración pendiente:', err.message))
         .finally(() => {
@@ -918,7 +942,7 @@
     }
 
     function detenerDatos() {
-      try { refRaiz.off(); refConfig.off(); } catch (e) { console.warn(e); }
+      try { refRaiz.off(); refConfig.off(); refMetodos.off(); } catch (e) { console.warn(e); }
       datosIniciados = false;
       config = null;
       configCargada = false;
@@ -942,9 +966,51 @@
       }).catch(() => ponerEstadoSync('(Sin conexión)', 'text-rose-300'));
     }
 
+    // ----- Medios de pago editables (se guardan en la nube para todos los celulares) -----
+    function pintarMetodos() {
+      const opciones = METODOS.map(m => `<option value="${esc(m)}">${esc(m)}</option>`).join('');
+      ['ventaMetodoPago', 'gastoMetodo', 'abonoMetodo'].forEach(id => {
+        const sel = document.getElementById(id); if (!sel) return;
+        const antes = sel.value; sel.innerHTML = opciones;
+        if (METODOS.includes(antes)) sel.value = antes;
+      });
+      const mov = document.getElementById('movMetodo');
+      if (mov) {
+        mov.innerHTML = '<option value="Todos">Todos los medios</option>' +
+          METODOS.map(m => `<option value="${esc(m)}">${iconoMetodo(m)} ${esc(m)}</option>`).join('');
+        mov.value = METODOS.includes(filtroMovMetodo) ? filtroMovMetodo : 'Todos';
+      }
+      const caja = document.getElementById('listaMetodos');
+      if (caja) caja.innerHTML = METODOS.map((m, i) => `
+        <li class="flex items-center justify-between bg-slate-50 border rounded-lg px-3 py-2">
+          <span class="font-semibold">${iconoMetodo(m)} ${esc(m)}</span>
+          ${m === 'Efectivo' ? '<span class="text-[10px] text-slate-400">fijo</span>'
+            : `<button type="button" onclick="quitarMetodo(${i})" class="text-rose-600 font-bold px-2" title="Quitar">✕</button>`}
+        </li>`).join('');
+    }
+    async function guardarMetodos(lista) {
+      try { await conTiempo(refMetodos.set(lista), 8000); }
+      catch (err) { avisarError(err); }
+    }
+    function agregarMetodo(e) {
+      e.preventDefault();
+      const inp = document.getElementById('nuevoMetodo');
+      const nombre = inp.value.trim().replace(/\s+/g, ' ');
+      if (!nombre) return;
+      if (METODOS.some(m => m.toLowerCase() === nombre.toLowerCase())) { alert('Ese medio de pago ya está en la lista.'); return; }
+      inp.value = '';
+      guardarMetodos([...METODOS, nombre]);
+    }
+    function quitarMetodo(i) {
+      const m = METODOS[i]; if (!m || m === 'Efectivo') return;
+      if (!confirm(`¿Quitar "${m}" de la lista? Lo que ya registraste con ese medio no se borra.`)) return;
+      guardarMetodos(METODOS.filter((_, j) => j !== i));
+    }
+
     function actualizarPantallaCompleta() {
       // Si borraron un producto que estaba en el carrito, se quita
       carrito = carrito.filter(i => estado.productos[i.prodKey]);
+      pintarMetodos();
       renderizarDashboard();
       renderizarInventario();
       renderizarHistorial();
@@ -1894,20 +1960,20 @@
         ? `⏳ Además te deben <b class="text-amber-600">${dinero(deudaCat)}</b> en ventas a crédito (no se cuentan hasta que paguen).`
         : '';
 
-      const filas = METODOS.map(metodo => {
+      const usados = [...entradas, ...gas].map(x => normalizarMetodo(x.metodoPago));
+      const filas = [...new Set([...METODOS, ...usados])].map(metodo => {
         const entro = suma(entradas.filter(m => normalizarMetodo(m.metodoPago) === metodo), m => m.monto);
         const salio = -suma(gas.filter(g => normalizarMetodo(g.metodoPago) === metodo), valorCaja);
         return { metodo, entro, salio, neto: entro - salio };
       });
       const total = { entro: suma(filas, f => f.entro), salio: suma(filas, f => f.salio), neto: suma(filas, f => f.neto) };
 
-      const iconos = { Efectivo: '💵', Nequi: '🟣', Bancolombia: '🟡', Daviplata: '🔴' };
       const colorNeto = n => n < 0 ? 'text-rose-600' : 'text-slate-800';
       const salida = v => v > 0 ? '-' + dinero(v) : v < 0 ? '+' + dinero(-v) : dinero(0);
 
       $('tablaCuadre').innerHTML = filas.map(f => `
-        <tr class="fila-metodo ${filtroMovMetodo === f.metodo ? 'elegida' : ''}" onclick="elegirMetodoMov('${f.metodo}')">
-          <td class="px-1.5 py-2.5 sm:p-2.5 font-semibold whitespace-nowrap">${iconos[f.metodo]} ${f.metodo}</td>
+        <tr class="fila-metodo ${filtroMovMetodo === f.metodo ? 'elegida' : ''}" onclick="elegirMetodoMov(this.dataset.m)" data-m="${esc(f.metodo)}">
+          <td class="px-1.5 py-2.5 sm:p-2.5 font-semibold whitespace-nowrap">${iconoMetodo(f.metodo)} ${esc(f.metodo)}</td>
           <td class="px-1.5 py-2.5 sm:p-2.5 text-right text-emerald-600">${dinero(f.entro)}</td>
           <td class="px-1.5 py-2.5 sm:p-2.5 text-right text-rose-600">${salida(f.salio)}</td>
           <td class="px-1.5 py-2.5 sm:p-2.5 text-right font-bold ${colorNeto(f.neto)}">${dinero(f.neto)}</td>
@@ -2067,6 +2133,7 @@
         pdf.save('postal_navidena_mate_y_lau.pdf');
       });
     }
+      try { pintarMetodos(); } catch (e) {}
   </script>
 </body>
 </html>
