@@ -390,7 +390,7 @@
       </section>
 
      <!-- ===================== GASTOS DE CAJA ===================== -->
-      <section id="sec-gastos-caja" class="hidden max-w-lg mx-auto">
+      <section id="sec-gastos-caja" class="hidden max-w-lg mx-auto space-y-4">
         <div class="bg-white p-6 rounded-xl shadow-sm border border-slate-200 space-y-4">
           <h2 class="text-base font-bold text-slate-800 flex items-center gap-2"><i class="fa-solid fa-receipt text-rose-600"></i> Registrar Gasto o Devolución en Caja</h2>
           <form onsubmit="guardarGastoCaja(event)" class="space-y-3">
@@ -426,6 +426,28 @@
             </div>
             <button type="submit" class="w-full bg-slate-900 hover:bg-slate-800 text-white font-bold py-3 rounded-lg shadow transition">Registrar en Caja</button>
           </form>
+        </div>
+        <!-- Carga masiva de gastos -->
+        <div class="bg-white p-6 rounded-xl shadow-sm border border-slate-200 space-y-3">
+          <h2 class="text-base font-bold text-slate-800 flex items-center gap-2"><i class="fa-solid fa-list-check text-rose-600"></i> Carga masiva de gastos</h2>
+          <p class="text-[11px] text-slate-500">Para cargar de una vez materiales o compras. Una línea por gasto: <b>Concepto, Monto</b>. También puedes pegar dos columnas desde Excel.</p>
+          <div class="grid grid-cols-2 gap-2">
+            <div>
+              <label class="block text-xs font-semibold text-slate-600 mb-1">Proyecto</label>
+              <select id="gmCat" class="w-full p-2.5 border rounded-lg bg-slate-50 text-sm"></select>
+            </div>
+            <div>
+              <label class="block text-xs font-semibold text-slate-600 mb-1">Medio de pago</label>
+              <select id="gmMetodo" class="w-full p-2.5 border rounded-lg bg-slate-50 text-sm"></select>
+            </div>
+          </div>
+          <div>
+            <label class="block text-xs font-semibold text-slate-600 mb-1">Fecha de la compra <span class="text-slate-400 font-normal">(vacío = hoy)</span></label>
+            <input type="date" id="gmFecha" class="w-full p-2.5 border rounded-lg text-sm">
+          </div>
+          <textarea id="gmTexto" rows="7" oninput="previsualizarGastosMasivos()" class="w-full p-2.5 border rounded-lg text-xs font-mono" placeholder="Parafina 1,5 kg, 13.500&#10;Pabilo, 6.000&#10;Cajas x25 Los Cartujos, 47.025&#10;Papel y cinta, 10.000"></textarea>
+          <div id="gmVista" class="text-xs"></div>
+          <button type="button" id="btnGuardarGM" onclick="guardarGastosMasivos()" class="w-full bg-rose-600 hover:bg-rose-700 text-white font-bold py-3 rounded-lg shadow transition">Cargar gastos</button>
         </div>
       </section>
 
@@ -1015,7 +1037,7 @@
     // ----- Medios de pago editables (se guardan en la nube para todos los celulares) -----
     function pintarMetodos() {
       const opciones = METODOS.map(m => `<option value="${esc(m)}">${esc(m)}</option>`).join('');
-      ['ventaMetodoPago', 'gastoMetodo', 'abonoMetodo'].forEach(id => {
+      ['ventaMetodoPago', 'gastoMetodo', 'abonoMetodo', 'gmMetodo'].forEach(id => {
         const sel = document.getElementById(id); if (!sel) return;
         const antes = sel.value; sel.innerHTML = opciones;
         if (METODOS.includes(antes)) sel.value = antes;
@@ -1089,6 +1111,7 @@
 
       llenarSelect('ventaCat', ['Todas', 'Todos los proyectos'], vendibles, etq);
       llenarSelect('gastoCat', null, activos.map(x => x.nombre), etq);
+      llenarSelect('gmCat', null, activos.map(x => x.nombre), etq);
       llenarSelect('invFiltroCat', ['Todos', 'Todos los proyectos'], todosProd, etq);
       llenarSelect('histFiltroCat', ['Todos', 'Todos los proyectos'], todos, etq);
       llenarSelect('prodCategoria', null, vendibles, etq);
@@ -1921,6 +1944,58 @@
         alert('Operación guardada localmente. Se sincronizará con internet.');
       }
     }
+    // ----- Carga masiva de gastos -----
+    // "13.500" / "$13,500" / "13500" -> 13500 ; "13.500,50" -> 13500.5
+    function leerMonto(txt) {
+      let t = String(txt || '').replace(/[$\s]/g, '');
+      if (/,\d{1,2}$/.test(t)) t = t.replace(/\./g, '').replace(',', '.');
+      else t = t.replace(/[.,](?=\d{3}(\D|$))/g, '');
+      const n = parseFloat(t);
+      return isFinite(n) ? n : NaN;
+    }
+    function leerGastosMasivos() {
+      return $('gmTexto').value.split('\n').map(l => l.trim()).filter(Boolean).map(l => {
+        const m = l.match(/^(.*?)[,\t;]\s*\$?\s*([\d.,]+)\s*$/);
+        if (!m) return { linea: l, error: true };
+        const concepto = m[1].trim();
+        const monto = leerMonto(m[2]);
+        return { linea: l, concepto, monto, error: !concepto || !(monto > 0) };
+      });
+    }
+    function previsualizarGastosMasivos() {
+      const filas = leerGastosMasivos();
+      const ok = filas.filter(f => !f.error), malas = filas.filter(f => f.error);
+      $('gmVista').innerHTML = !filas.length ? '' : `
+        <div class="border rounded-lg divide-y divide-slate-100 px-3">
+          ${ok.map(f => `<div class="flex justify-between py-1.5 gap-2"><span class="truncate text-slate-700">${esc(f.concepto)}</span><b class="text-rose-600">${dinero(f.monto)}</b></div>`).join('')}
+          ${malas.map(f => `<div class="py-1.5 text-rose-600">⚠️ No entendí: "${esc(f.linea)}"</div>`).join('')}
+          <div class="flex justify-between py-2 font-bold"><span>${ok.length} ${ok.length === 1 ? 'gasto' : 'gastos'}</span><span class="text-rose-600">${dinero(suma(ok, f => f.monto))}</span></div>
+        </div>`;
+    }
+    async function guardarGastosMasivos() {
+      const filas = leerGastosMasivos();
+      const ok = filas.filter(f => !f.error);
+      if (!ok.length) { alert('Escribe al menos una línea: Concepto, Monto'); return; }
+      if (filas.length !== ok.length && !confirm(`Hay ${filas.length - ok.length} línea(s) que no entendí y no se cargarán. ¿Seguir con las ${ok.length} buenas?`)) return;
+      const cat = $('gmCat').value, metodo = $('gmMetodo').value, fecha = $('gmFecha').value || fechaHoy();
+      const total = suma(ok, f => f.monto);
+      if (!confirm(`¿Cargar ${ok.length} gasto(s) por ${dinero(total)} en ${emojiDe(cat)} ${cat}?\nMedio: ${metodo} · Fecha: ${fecha}`)) return;
+      const base = Date.now(), upd = {};
+      ok.forEach((f, n) => {
+        upd[refRaiz.child('gastosCaja').push().key] = {
+          id: base + n, fecha, tipo: 'Gasto Caja', esDevolucion: false,
+          metodoPago: metodo, categoria: cat, descripcion: f.concepto, monto: -Math.abs(f.monto)
+        };
+      });
+      const btn = $('btnGuardarGM'); btn.disabled = true; btn.textContent = 'Guardando...';
+      try {
+        await conTiempo(refRaiz.child('gastosCaja').update(upd), 10000);
+        $('gmTexto').value = ''; previsualizarGastosMasivos();
+        alert(`Listo: ${ok.length} gasto(s) por ${dinero(total)} cargados en ${cat}.`);
+      } catch (err) { avisarError(err); }
+      finally { btn.disabled = false; btn.textContent = 'Cargar gastos'; }
+    }
+
     // ---------------------------------------------------------
     // 9. INVENTARIO
     // ---------------------------------------------------------
